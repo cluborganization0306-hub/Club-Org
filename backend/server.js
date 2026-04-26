@@ -16,6 +16,8 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 const PORT = process.env.PORT || 5000;
 let MONGO_URI = process.env.MONGO_URI;
 
+const seedDatabase = require('./utils/seedData');
+
 const connectDB = async () => {
   try {
     if (!MONGO_URI) {
@@ -26,6 +28,9 @@ const connectDB = async () => {
     
     await mongoose.connect(MONGO_URI);
     console.log('MongoDB Connected');
+    
+    // Seed Database
+    await seedDatabase();
   } catch (err) {
     console.error(err);
     process.exit(1);
@@ -46,6 +51,7 @@ const eventRoutes = require('./routes/events');
 const memberRoutes = require('./routes/members');
 const budgetRoutes = require('./routes/budgets');
 const uploadRoutes = require('./routes/upload');
+const recommendationRoutes = require('./routes/recommendations');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -54,6 +60,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/recommendations', recommendationRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

@@ -1,4 +1,5 @@
 const Budget = require('../models/Budget');
+const Club = require('../models/Club');
 
 // Get budget for a club
 const getBudget = async (req, res) => {
@@ -20,6 +21,14 @@ const updateBudget = async (req, res) => {
   const { amount, expenseDescription, expenseCost } = req.body;
   
   try {
+    const club = await Club.findById(clubId);
+    if (!club) return res.status(404).json({ message: 'Club not found' });
+    
+    // Check if the user is the head of this club or an admin
+    if (req.user.role !== 'admin' && (!club.clubHeadId || !club.clubHeadId.equals(req.user._id))) {
+      return res.status(403).json({ message: 'Not authorized to update budget for this club' });
+    }
+
     let budget = await Budget.findOne({ clubId });
     if (!budget) {
        budget = new Budget({ clubId, amount: amount || 0, expenses: [] });

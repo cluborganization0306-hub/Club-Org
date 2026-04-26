@@ -1,4 +1,5 @@
 const Member = require('../models/Member');
+const Club = require('../models/Club');
 
 // Get members of a club
 const getMembers = async (req, res) => {
@@ -51,6 +52,13 @@ const approveMember = async (req, res) => {
     const member = await Member.findById(id);
     if (!member) return res.status(404).json({ message: 'Member not found' });
     
+    const club = await Club.findById(member.clubId);
+    if (!club) return res.status(404).json({ message: 'Club not found' });
+
+    if (req.user.role !== 'admin' && (!club.clubHeadId || !club.clubHeadId.equals(req.user._id))) {
+      return res.status(403).json({ message: 'Not authorized to approve members for this club' });
+    }
+
     member.status = 'approved';
     await member.save();
     res.json({ message: 'Member approved successfully', member });
@@ -63,8 +71,17 @@ const approveMember = async (req, res) => {
 const removeMember = async (req, res) => {
   const { id } = req.params;
   try {
-    const member = await Member.findByIdAndDelete(id);
+    const member = await Member.findById(id);
     if (!member) return res.status(404).json({ message: 'Member not found' });
+
+    const club = await Club.findById(member.clubId);
+    if (!club) return res.status(404).json({ message: 'Club not found' });
+
+    if (req.user.role !== 'admin' && (!club.clubHeadId || !club.clubHeadId.equals(req.user._id))) {
+      return res.status(403).json({ message: 'Not authorized to remove members for this club' });
+    }
+
+    await Member.findByIdAndDelete(id);
     
     res.json({ message: 'Member removed successfully' });
   } catch (error) {

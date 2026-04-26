@@ -1,12 +1,50 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap');
 
 @theme {
-  --color-brand-primary: #4F46E5;
-  --color-brand-secondary: #10B981;
+  --color-brand-primary: #8b5cf6; /* Vibrant Purple */
+  --color-brand-secondary: #ec4899; /* Vibrant Pink */
+  --color-brand-accent: #6366f1; /* Indigo */
+  --color-brand-dark: #2e1065; /* Dark Purple for Navbar */
 }
 
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #F9FAFB;
+  background-color: #f8f9fe;
   color: #111827;
+}
+
+/* Custom UI Utilities */
+@layer utilities {
+  .font-editorial {
+    font-family: 'Playfair Display', serif;
+  }
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/40 shadow-xl;
+  }
+  .mockup-card {
+    @apply bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden;
+  }
+  .mockup-btn {
+    @apply bg-gradient-to-r from-brand-accent via-brand-primary to-brand-secondary text-white font-bold rounded-xl shadow-md transition-all duration-300 hover:shadow-lg hover:shadow-brand-primary/30 hover:scale-[1.02] active:scale-95;
+  }
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-primary via-brand-accent to-brand-secondary;
+  }
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-brand-primary/20;
+  }
+  .input-ring {
+    @apply focus:ring-2 focus:ring-brand-primary/50 focus:border-brand-primary outline-none transition-all;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
 }

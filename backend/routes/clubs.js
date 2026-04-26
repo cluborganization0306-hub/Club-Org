@@ -1,12 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { getClubs, createClub, assignClubHead, requestHead, approveRequest, rejectRequest } = require('../controllers/clubs');
+const { getClubs, createClub, assignClubHead, requestHead, approveRequest, rejectRequest, updateClub, deleteClub } = require('../controllers/clubs');
 const { protect } = require('../middleware/authMiddleware');
 const { authorizeRoles } = require('../middleware/roleMiddleware');
 
-router.route('/')
-  .get(protect, getClubs)
-  .post(protect, authorizeRoles('admin'), createClub);
+router.get('/', getClubs);
+router.post('/', protect, authorizeRoles('admin'), createClub);
+
+router.route('/:id')
+  .put(protect, authorizeRoles('admin'), updateClub)
+  .delete(protect, authorizeRoles('admin'), deleteClub);
 
 router.route('/:id/assign-head')
   .put(protect, authorizeRoles('admin'), assignClubHead);

@@ -17,7 +17,27 @@ const getEvents = async (req, res) => {
 const createEvent = async (req, res) => {
   const { title, description, date, clubId } = req.body;
   try {
-    // Basic verification - check if user is head of this club could be added here
+    const club = await Club.findById(clubId);
+    if (!club) return res.status(404).json({ message: 'Club not found' });
+    
+    // Check if the user is the head of this club or an admin
+    if (req.user.role !== 'admin' && (!club.clubHeadId || !club.clubHeadId.equals(req.user._id))) {
+      return res.status(403).json({ message: 'Not authorized to create event for this club' });
+    }
+
+    // Conflict Detection: check if any event is scheduled within 1 hour
+    const eventDate = new Date(date);
+    const oneHourBefore = new Date(eventDate.getTime() - 60 * 60 * 1000);
+    const oneHourAfter = new Date(eventDate.getTime() + 60 * 60 * 1000);
+    
+    const conflict = await Event.findOne({
+      date: { $gte: oneHourBefore, $lte: oneHourAfter }
+    });
+
+    if (conflict) {
+      return res.status(400).json({ message: 'Conflict: Another event is scheduled within 1 hour of this time.' });
+    }
+
     const newEvent = await Event.create({ title, description, date, clubId });
     res.status(201).json(newEvent);
   } catch (error) {
@@ -45,4 +65,24 @@ const participateInEvent = async (req, res) => {
   }
 };
 
-module.exports = { getEvents, createEvent, participateInEvent };
+// Mark attendance (Student scans QR code)
+const markAttendance = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const event = await Event.findById(id);
+    if (!event) return res.status(404).json({ message: 'Event not found' });
+    
+    if (event.attendees.includes(req.user._id)) {
+      return res.status(400).json({ message: 'Attendance already marked' });
+    }
+    
+    event.attendees.push(req.user._id);
+    await event.save();
+    
+    res.json({ message: 'Successfully marked attendance!', event });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getEvents, createEvent, participateInEvent, markAttendance };

@@ -49,7 +49,7 @@ const requestHead = async (req, res) => {
     if (!club) return res.status(404).json({ message: 'Club not found' });
     
     if (club.clubHeadId) return res.status(400).json({ message: 'Club already has a head' });
-    if (club.pendingRequests.includes(req.user._id)) {
+    if (club.pendingRequests.some(reqId => reqId.equals(req.user._id))) {
       return res.status(400).json({ message: 'Request already sent' });
     }
     
@@ -94,4 +94,38 @@ const rejectRequest = async (req, res) => {
   }
 };
 
-module.exports = { getClubs, createClub, assignClubHead, requestHead, approveRequest, rejectRequest };
+// Update club (Admin)
+const updateClub = async (req, res) => {
+  const { id } = req.params;
+  const { clubName, description, clubHeadId, logoUrl } = req.body;
+  try {
+    const club = await Club.findById(id);
+    if (!club) return res.status(404).json({ message: 'Club not found' });
+
+    club.clubName = clubName || club.clubName;
+    club.description = description || club.description;
+    if (clubHeadId !== undefined) club.clubHeadId = clubHeadId;
+    if (logoUrl !== undefined) club.logoUrl = logoUrl;
+
+    await club.save();
+    res.json(club);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Delete club (Admin)
+const deleteClub = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const club = await Club.findById(id);
+    if (!club) return res.status(404).json({ message: 'Club not found' });
+
+    await Club.findByIdAndDelete(id);
+    res.json({ message: 'Club deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getClubs, createClub, assignClubHead, requestHead, approveRequest, rejectRequest, updateClub, deleteClub };

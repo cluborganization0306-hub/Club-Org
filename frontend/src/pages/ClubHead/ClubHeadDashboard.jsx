@@ -1,7 +1,11 @@
 import React, { useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
-import { CalendarPlus, Users, DollarSign, BarChart3, PlusCircle, Building, CheckCircle, Check, X, Eye } from 'lucide-react';
+import { CalendarPlus, Users, DollarSign, BarChart3, PlusCircle, Building, CheckCircle, Check, X, Eye, QrCode } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { QRCodeSVG } from 'qrcode.react';
+import { toast } from 'sonner';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 const ClubHeadDashboard = () => {
   const { user, getAuthHeaders } = useContext(AuthContext);
@@ -15,9 +19,11 @@ const ClubHeadDashboard = () => {
   
   const [activeTab, setActiveTab] = useState('events'); // events, budget, performance, members, request
 
-  // Event Participants Modal
+  // Event Participants & QR Modals
   const [participantsModalOpen, setParticipantsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [selectedQrEvent, setSelectedQrEvent] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -27,8 +33,8 @@ const ClubHeadDashboard = () => {
     try {
       const headers = getAuthHeaders();
       const [clubsRes, eventsRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/clubs', { headers }),
-        axios.get('http://localhost:5000/api/events', { headers })
+        axios.get((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/clubs', { headers }),
+        axios.get((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/events', { headers })
       ]);
       setClubs(clubsRes.data);
       setEvents(eventsRes.data);
@@ -45,7 +51,7 @@ const ClubHeadDashboard = () => {
 
   const fetchBudget = async (clubId) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/budgets/${clubId}`, { headers: getAuthHeaders() });
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/budgets/${clubId}`, { headers: getAuthHeaders() });
       if (res.data) setBudget(res.data);
     } catch (error) {
       console.error("Error fetching budget", error);
@@ -54,7 +60,7 @@ const ClubHeadDashboard = () => {
 
   const fetchMembers = async (clubId) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/members/${clubId}`, { headers: getAuthHeaders() });
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/members/${clubId}`, { headers: getAuthHeaders() });
       setMembers(res.data);
     } catch (error) {
       console.error("Error fetching members", error);
@@ -64,62 +70,64 @@ const ClubHeadDashboard = () => {
   const handleCreateEvent = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/events', newEvent, { headers: getAuthHeaders() });
-      alert("Event created successfully!");
+      await axios.post((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/events', newEvent, { headers: getAuthHeaders() });
+      toast.success("Event created successfully!");
       fetchData();
       setNewEvent({ ...newEvent, title: '', description: '', date: '' });
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to create event");
+      toast.error(error.response?.data?.message || "Failed to create event");
     }
   };
 
   const handleAddExpense = async (e) => {
     e.preventDefault();
     const myClubs = clubs.filter(c => c.clubHeadId && c.clubHeadId._id === user._id);
-    if (myClubs.length === 0) return alert("You don't manage any clubs yet.");
+    if (myClubs.length === 0) return toast.error("You don't manage any clubs yet.");
     
     try {
-      await axios.put(`http://localhost:5000/api/budgets/${myClubs[0]._id}`, {
+      await axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/budgets/${myClubs[0]._id}`, {
         expenseDescription: newExpense.description,
         expenseCost: Number(newExpense.cost)
       }, { headers: getAuthHeaders() });
       
-      alert("Expense added!");
+      toast.success("Expense added!");
       setNewExpense({ description: '', cost: '' });
       fetchBudget(myClubs[0]._id);
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to add expense");
+      toast.error(error.response?.data?.message || "Failed to add expense");
     }
   };
 
   const handleRequestLead = async (clubId) => {
     try {
-      await axios.post(`http://localhost:5000/api/clubs/${clubId}/request`, {}, { headers: getAuthHeaders() });
-      alert("Request sent successfully!");
+      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/clubs/${clubId}/request`, {}, { headers: getAuthHeaders() });
+      toast.success("Request sent successfully!");
       fetchData();
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to send request");
+      toast.error(error.response?.data?.message || "Failed to send request");
     }
   };
 
   const handleApproveMember = async (memberId) => {
     try {
-      await axios.put(`http://localhost:5000/api/members/${memberId}/approve`, {}, { headers: getAuthHeaders() });
+      await axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/members/${memberId}/approve`, {}, { headers: getAuthHeaders() });
+      toast.success("Member approved!");
       const myClubs = clubs.filter(c => c.clubHeadId && c.clubHeadId._id === user._id);
       if (myClubs.length > 0) fetchMembers(myClubs[0]._id);
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to approve member");
+      toast.error(error.response?.data?.message || "Failed to approve member");
     }
   };
 
   const handleRemoveMember = async (memberId) => {
     if (!window.confirm("Are you sure you want to remove this member?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/members/${memberId}/remove`, { headers: getAuthHeaders() });
+      await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/members/${memberId}/remove`, { headers: getAuthHeaders() });
+      toast.success("Member removed!");
       const myClubs = clubs.filter(c => c.clubHeadId && c.clubHeadId._id === user._id);
       if (myClubs.length > 0) fetchMembers(myClubs[0]._id);
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to remove member");
+      toast.error(error.response?.data?.message || "Failed to remove member");
     }
   };
 
@@ -139,9 +147,30 @@ const ClubHeadDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Club Head Dashboard</h1>
-        <p className="text-gray-600 mt-2">Manage your club, events, members, and budget.</p>
+      <header className="mb-8 p-10 bg-gradient-to-r from-pink-50 via-white to-indigo-50 rounded-3xl relative overflow-hidden shadow-sm border border-white">
+        {/* Decorators */}
+        <div className="absolute top-8 left-12 text-indigo-400 opacity-60">✦</div>
+        <div className="absolute bottom-10 left-1/3 text-pink-400 opacity-60">✦</div>
+        <div className="absolute top-12 right-1/4 w-3 h-3 rounded-full border-2 border-cyan-400"></div>
+        <div className="absolute bottom-1/4 right-12 w-2 h-2 rounded-full bg-pink-300"></div>
+        <div className="absolute top-10 right-10 grid grid-cols-4 gap-2 opacity-20">
+          {[...Array(12)].map((_, i) => <div key={i} className="w-1.5 h-1.5 rounded-full bg-indigo-600"></div>)}
+        </div>
+        
+        {/* Abstract Illustration Elements */}
+        <div className="absolute right-0 bottom-0 w-1/2 h-full opacity-30 pointer-events-none overflow-hidden">
+           <div className="absolute right-10 -bottom-10 w-64 h-64 bg-brand-primary rounded-full mix-blend-multiply filter blur-3xl"></div>
+           <div className="absolute right-40 top-0 w-48 h-48 bg-brand-secondary rounded-full mix-blend-multiply filter blur-3xl"></div>
+        </div>
+
+        <div className="relative z-10 max-w-2xl pt-4">
+          <h1 className="text-4xl font-editorial font-extrabold text-gray-900 tracking-tight mb-4">
+            <span className="text-brand-accent">Club Head</span> Dashboard
+          </h1>
+          <p className="text-gray-600 text-lg leading-relaxed">
+            Manage your club, events, members, and budget efficiently.
+          </p>
+        </div>
         {myClubs.length === 0 && (
           <div className="mt-4 bg-amber-50 text-amber-800 p-4 rounded-lg border border-amber-200">
             <strong>Notice:</strong> You have not been assigned to a club yet. Please go to the "Request Club" tab.
@@ -150,37 +179,25 @@ const ClubHeadDashboard = () => {
       </header>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 gap-6 overflow-x-auto whitespace-nowrap">
-        <button 
-          onClick={() => setActiveTab('events')} 
-          className={`pb-3 font-medium flex items-center gap-2 ${activeTab === 'events' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
-        >
-          <CalendarPlus size={18} /> Event Management
-        </button>
-        <button 
-          onClick={() => setActiveTab('members')} 
-          className={`pb-3 font-medium flex items-center gap-2 ${activeTab === 'members' ? 'border-b-2 border-pink-600 text-pink-600' : 'text-gray-500 hover:text-gray-700'}`}
-        >
-          <Users size={18} /> Members & Applications
-        </button>
-        <button 
-          onClick={() => setActiveTab('budget')} 
-          className={`pb-3 font-medium flex items-center gap-2 ${activeTab === 'budget' ? 'border-b-2 border-green-600 text-green-600' : 'text-gray-500 hover:text-gray-700'}`}
-        >
-          <DollarSign size={18} /> Budget Tracker
-        </button>
-        <button 
-          onClick={() => setActiveTab('performance')} 
-          className={`pb-3 font-medium flex items-center gap-2 ${activeTab === 'performance' ? 'border-b-2 border-purple-600 text-purple-600' : 'text-gray-500 hover:text-gray-700'}`}
-        >
-          <BarChart3 size={18} /> Performance Analysis
-        </button>
-        <button 
-          onClick={() => setActiveTab('request')} 
-          className={`pb-3 font-medium flex items-center gap-2 ${activeTab === 'request' ? 'border-b-2 border-amber-500 text-amber-600' : 'text-gray-500 hover:text-gray-700'}`}
-        >
-          <Building size={18} /> Request Club
-        </button>
+      <div className="flex border-b border-gray-200 gap-6 overflow-x-auto whitespace-nowrap mb-6">
+        {[
+          { id: 'events', label: 'Event Management', icon: CalendarPlus, color: 'text-indigo-600', border: 'border-indigo-600' },
+          { id: 'members', label: 'Members & Applications', icon: Users, color: 'text-pink-600', border: 'border-pink-600' },
+          { id: 'budget', label: 'Budget Tracker', icon: DollarSign, color: 'text-green-600', border: 'border-green-600' },
+          { id: 'performance', label: 'Performance Analysis', icon: BarChart3, color: 'text-purple-600', border: 'border-purple-600' },
+          { id: 'request', label: 'Request Club', icon: Building, color: 'text-amber-600', border: 'border-amber-500' }
+        ].map(tab => (
+          <button 
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)} 
+            className={`pb-3 font-medium flex items-center gap-2 relative transition-colors ${activeTab === tab.id ? tab.color : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            <tab.icon size={18} /> {tab.label}
+            {activeTab === tab.id && (
+              <motion.div layoutId="activeTab" className={`absolute bottom-0 left-0 right-0 h-0.5 bg-current`} />
+            )}
+          </button>
+        ))}
       </div>
 
       {/* Tab Contents */}
@@ -288,7 +305,7 @@ const ClubHeadDashboard = () => {
                 <p className="p-6 text-gray-500 text-center">No pending membership requests.</p>
               ) : (
                 pendingMembers.map(member => (
-                  <div key={member._id} className="p-4 px-6 flex justify-between items-center bg-white hover:bg-gray-50">
+                  <div key={member._id} className="p-4 px-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white hover:bg-gray-50">
                     <div>
                       <p className="font-semibold text-gray-900">{member.userId?.name || member.name}</p>
                       <p className="text-sm text-gray-500">{member.userId?.email || member.email}</p>
