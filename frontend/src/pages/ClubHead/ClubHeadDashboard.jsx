@@ -1,11 +1,12 @@
 import React, { useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
-import { CalendarPlus, Users, DollarSign, BarChart3, PlusCircle, Building, CheckCircle, Check, X, Eye, QrCode } from 'lucide-react';
+import { CalendarPlus, Users, DollarSign, BarChart3, PlusCircle, Building, CheckCircle, Check, X, Eye, QrCode, Megaphone, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import ChatBox from '../../components/ChatBox';
 
 const ClubHeadDashboard = () => {
   const { user, getAuthHeaders } = useContext(AuthContext);
@@ -17,7 +18,10 @@ const ClubHeadDashboard = () => {
   const [newEvent, setNewEvent] = useState({ title: '', description: '', date: '', clubId: '' });
   const [newExpense, setNewExpense] = useState({ description: '', cost: '' });
   
-  const [activeTab, setActiveTab] = useState('events'); // events, budget, performance, members, request
+  const [announcements, setAnnouncements] = useState([]);
+  const [newAnnouncement, setNewAnnouncement] = useState('');
+
+  const [activeTab, setActiveTab] = useState('events'); // events, budget, performance, members, request, announcements, chat
 
   // Event Participants & QR Modals
   const [participantsModalOpen, setParticipantsModalOpen] = useState(false);
@@ -43,6 +47,7 @@ const ClubHeadDashboard = () => {
       if (myClubs.length > 0) {
         fetchBudget(myClubs[0]._id);
         fetchMembers(myClubs[0]._id);
+        fetchAnnouncements(myClubs[0]._id);
       }
     } catch (error) {
       console.error("Error fetching data", error);
@@ -64,6 +69,15 @@ const ClubHeadDashboard = () => {
       setMembers(res.data);
     } catch (error) {
       console.error("Error fetching members", error);
+    }
+  };
+
+  const fetchAnnouncements = async (clubId) => {
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/announcements/${clubId}`, { headers: getAuthHeaders() });
+      setAnnouncements(res.data);
+    } catch (error) {
+      console.error("Error fetching announcements", error);
     }
   };
 
@@ -131,6 +145,36 @@ const ClubHeadDashboard = () => {
     }
   };
 
+  const handleUpdatePosition = async (memberId, position) => {
+    try {
+      await axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/members/${memberId}/position`, { position }, { headers: getAuthHeaders() });
+      toast.success("Position updated!");
+      const myClubs = clubs.filter(c => c.clubHeadId && c.clubHeadId._id === user._id);
+      if (myClubs.length > 0) fetchMembers(myClubs[0]._id);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update position");
+    }
+  };
+
+  const handlePostAnnouncement = async (e) => {
+    e.preventDefault();
+    if (!newAnnouncement.trim()) return;
+    const myClubs = clubs.filter(c => c.clubHeadId && c.clubHeadId._id === user._id);
+    if (myClubs.length === 0) return;
+
+    try {
+      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/announcements`, {
+        clubId: myClubs[0]._id,
+        content: newAnnouncement
+      }, { headers: getAuthHeaders() });
+      toast.success("Announcement posted!");
+      setNewAnnouncement('');
+      fetchAnnouncements(myClubs[0]._id);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to post announcement");
+    }
+  };
+
   const myClubs = clubs.filter(c => c.clubHeadId && c.clubHeadId._id === user._id);
   const availableClubs = clubs.filter(c => !c.clubHeadId);
 
@@ -184,6 +228,8 @@ const ClubHeadDashboard = () => {
           { id: 'events', label: 'Event Management', icon: CalendarPlus, color: 'text-indigo-600', border: 'border-indigo-600' },
           { id: 'members', label: 'Members & Applications', icon: Users, color: 'text-pink-600', border: 'border-pink-600' },
           { id: 'budget', label: 'Budget Tracker', icon: DollarSign, color: 'text-green-600', border: 'border-green-600' },
+          { id: 'announcements', label: 'Announcements', icon: Megaphone, color: 'text-blue-600', border: 'border-blue-600' },
+          { id: 'chat', label: 'Club Chat', icon: MessageSquare, color: 'text-teal-600', border: 'border-teal-600' },
           { id: 'performance', label: 'Performance Analysis', icon: BarChart3, color: 'text-purple-600', border: 'border-purple-600' },
           { id: 'request', label: 'Request Club', icon: Building, color: 'text-amber-600', border: 'border-amber-500' }
         ].map(tab => (
@@ -203,7 +249,7 @@ const ClubHeadDashboard = () => {
       {/* Tab Contents */}
       {activeTab === 'events' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden h-fit">
+          <div className="lg:col-span-1 mockup-card overflow-hidden h-fit">
             <div className="px-6 py-5 border-b border-gray-100 bg-gray-50">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <CalendarPlus size={20} className="text-indigo-600" /> Create Event
@@ -257,7 +303,7 @@ const ClubHeadDashboard = () => {
             </div>
           </div>
 
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="lg:col-span-2 mockup-card overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
               <h3 className="text-lg font-semibold text-gray-900">Manage Events</h3>
             </div>
@@ -294,7 +340,7 @@ const ClubHeadDashboard = () => {
       {activeTab === 'members' && (
         <div className="space-y-8">
           {/* Pending Applications */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="mockup-card overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-100 bg-amber-50">
               <h3 className="text-lg font-semibold text-amber-900 flex items-center gap-2">
                 <Users size={20} className="text-amber-600" /> Pending Applications
@@ -336,7 +382,7 @@ const ClubHeadDashboard = () => {
           </div>
 
           {/* Current Members */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="mockup-card overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-100 bg-gray-50">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <CheckCircle size={20} className="text-green-600" /> Current Members ({approvedMembers.length})
@@ -351,6 +397,7 @@ const ClubHeadDashboard = () => {
                     <th className="p-4">PRN</th>
                     <th className="p-4">Department</th>
                     <th className="p-4">Year</th>
+                    <th className="p-4">Position</th>
                     <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -367,6 +414,17 @@ const ClubHeadDashboard = () => {
                         <td className="p-4 text-gray-600">{member.userId?.prn || 'N/A'}</td>
                         <td className="p-4 text-gray-600">{member.userId?.department || 'N/A'}</td>
                         <td className="p-4 text-gray-600">{member.userId?.year ? `${member.userId.year} Yr` : 'N/A'}</td>
+                        <td className="p-4">
+                          <select
+                            value={member.position || 'Member'}
+                            onChange={(e) => handleUpdatePosition(member._id, e.target.value)}
+                            className="text-sm border border-gray-300 rounded-md p-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                          >
+                            {['Member', 'Vice President', 'Secretary', 'Treasurer', 'Event Lead', 'Technical Lead', 'Data Manager', 'Social Media & Marketing Lead'].map(pos => (
+                              <option key={pos} value={pos}>{pos}</option>
+                            ))}
+                          </select>
+                        </td>
                         <td className="p-4 text-right">
                           <button 
                             onClick={() => handleRemoveMember(member._id)}
@@ -387,7 +445,7 @@ const ClubHeadDashboard = () => {
 
       {activeTab === 'budget' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden h-fit">
+          <div className="lg:col-span-1 mockup-card overflow-hidden h-fit">
             <div className="px-6 py-5 border-b border-gray-100 bg-gray-50">
               <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <PlusCircle size={20} className="text-green-600" /> Log Expense
@@ -438,7 +496,7 @@ const ClubHeadDashboard = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="mockup-card overflow-hidden">
               <div className="px-6 py-5 border-b border-gray-100 bg-gray-50">
                 <h3 className="text-lg font-semibold text-gray-900">Expense History</h3>
               </div>
@@ -491,7 +549,7 @@ const ClubHeadDashboard = () => {
       )}
 
       {activeTab === 'request' && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="mockup-card overflow-hidden">
           <div className="px-6 py-5 border-b border-gray-100 bg-gray-50">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <Building size={20} className="text-gray-500" /> Request to Lead a Club
@@ -539,6 +597,62 @@ const ClubHeadDashboard = () => {
             )}
           </div>
         </div>
+      )}
+
+      {activeTab === 'announcements' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1 mockup-card overflow-hidden h-fit">
+            <div className="px-6 py-5 border-b border-gray-100 bg-gray-50">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Megaphone size={20} className="text-blue-600" /> New Announcement
+              </h3>
+            </div>
+            <div className="p-6">
+              <form onSubmit={handlePostAnnouncement} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                  <textarea 
+                    required rows="4"
+                    placeholder="Type your announcement here..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    value={newAnnouncement}
+                    onChange={e => setNewAnnouncement(e.target.value)}
+                  ></textarea>
+                </div>
+                <button type="submit" disabled={myClubs.length === 0} className="w-full bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                  Post Announcement
+                </button>
+              </form>
+            </div>
+          </div>
+          <div className="lg:col-span-2 mockup-card overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-100 bg-gray-50">
+              <h3 className="text-lg font-semibold text-gray-900">Recent Announcements</h3>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {announcements.length === 0 ? (
+                <p className="p-6 text-gray-500 text-center">No announcements posted yet.</p>
+              ) : (
+                announcements.map(ann => (
+                  <div key={ann._id} className="p-6 hover:bg-gray-50">
+                    <p className="text-gray-800 whitespace-pre-wrap">{ann.content}</p>
+                    <p className="text-xs text-gray-400 mt-2 font-medium">Posted by {ann.createdBy?.name} • {new Date(ann.createdAt).toLocaleString()}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'chat' && (
+        myClubs.length > 0 ? (
+          <div className="max-w-4xl mx-auto">
+            <ChatBox clubId={myClubs[0]._id} />
+          </div>
+        ) : (
+          <div className="p-8 text-center text-gray-500 bg-white rounded-xl shadow-sm">You need to lead a club to access the chat.</div>
+        )
       )}
 
       {/* Participants Modal */}

@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { getRecommendedClubs } = require('../controllers/recommendations');
+const { getChatHistory } = require('../controllers/chat');
 const { protect } = require('../middleware/authMiddleware');
 
-router.route('/')
-  .get(protect, getRecommendedClubs);
+router.route('/:clubId')
+  .get(protect, getChatHistory);
 
 module.exports = router;

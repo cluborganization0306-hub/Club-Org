@@ -1,13 +1,14 @@
 import React, { useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
-import { Compass, Calendar as CalendarIcon, UserCheck, ChevronRight, Trophy, Star, List, CalendarDays, Ghost } from 'lucide-react';
+import { Compass, Calendar as CalendarIcon, UserCheck, ChevronRight, Trophy, Star, List, CalendarDays, Ghost, Megaphone, MessageSquare, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { enUS } from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import ChatBox from '../../components/ChatBox';
 
 const locales = {
   'en-US': enUS,
@@ -25,9 +26,13 @@ const StudentDashboard = () => {
   const [clubs, setClubs] = useState([]);
   const [events, setEvents] = useState([]);
   const [myMemberships, setMyMemberships] = useState([]);
-  const [recommendedClubs, setRecommendedClubs] = useState([]);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar'
   const [isLoading, setIsLoading] = useState(true);
+
+  // My Club Workspace
+  const [selectedMyClub, setSelectedMyClub] = useState(null);
+  const [announcements, setAnnouncements] = useState([]);
+  const [clubActiveTab, setClubActiveTab] = useState('announcements'); // announcements, chat
 
   useEffect(() => {
     fetchData();
@@ -37,16 +42,14 @@ const StudentDashboard = () => {
     setIsLoading(true);
     try {
       const headers = getAuthHeaders();
-      const [clubsRes, eventsRes, membershipsRes, recRes] = await Promise.all([
+      const [clubsRes, eventsRes, membershipsRes] = await Promise.all([
         axios.get((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/clubs', { headers }),
         axios.get((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/events', { headers }),
-        axios.get((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/members/my-memberships', { headers }),
-        axios.get((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/recommendations', { headers }).catch(() => ({ data: [] }))
+        axios.get((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/members/my-memberships', { headers })
       ]);
       setClubs(clubsRes.data);
       setEvents(eventsRes.data);
       setMyMemberships(membershipsRes.data);
-      setRecommendedClubs(recRes.data);
     } catch (error) {
       console.error("Error fetching data", error);
       toast.error("Failed to load dashboard data");
@@ -72,6 +75,17 @@ const StudentDashboard = () => {
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to join club");
+    }
+  };
+
+  const handleSelectMyClub = async (club) => {
+    setSelectedMyClub(club);
+    setClubActiveTab('announcements');
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/announcements/${club._id}`, { headers: getAuthHeaders() });
+      setAnnouncements(res.data);
+    } catch (error) {
+      console.error("Error fetching announcements", error);
     }
   };
 
@@ -128,6 +142,99 @@ const StudentDashboard = () => {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* My Clubs Workspace Section */}
+        {myMemberships.filter(m => m.status === 'approved').length > 0 && (
+          <div className="mockup-card lg:col-span-2">
+            <div className="px-6 py-6 flex items-center justify-between border-b border-gray-50">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-brand-accent text-white rounded-xl shadow-sm">
+                  <Star size={24} />
+                </div>
+                <h3 className="text-xl font-extrabold text-gray-900">
+                  My Clubs Workspace
+                </h3>
+              </div>
+              {selectedMyClub && (
+                <button onClick={() => setSelectedMyClub(null)} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 font-medium bg-gray-100 px-3 py-1.5 rounded-lg">
+                  <ArrowLeft size={16} /> Back to Clubs
+                </button>
+              )}
+            </div>
+            
+            <div className="p-6">
+              {!selectedMyClub ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {myMemberships.filter(m => m.status === 'approved').map(membership => (
+                    <div 
+                      key={membership.clubId._id}
+                      onClick={() => handleSelectMyClub(membership.clubId)}
+                      className="p-5 bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md hover:border-brand-accent/50 cursor-pointer transition-all flex items-center gap-4"
+                    >
+                      {membership.clubId.logoUrl ? (
+                        <img src={membership.clubId.logoUrl} className="w-12 h-12 rounded-xl object-cover" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-brand-accent/10 text-brand-accent flex items-center justify-center font-bold text-lg">
+                          {membership.clubId.clubName.substring(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <h4 className="font-bold text-gray-900">{membership.clubId.clubName}</h4>
+                        <p className="text-xs font-semibold text-brand-accent/80 mt-1">{membership.position || 'Member'}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="animate-in fade-in zoom-in-95 duration-200">
+                  <h4 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                    {selectedMyClub.clubName}
+                  </h4>
+                  <div className="flex border-b border-gray-200 gap-6 mb-6">
+                    <button 
+                      onClick={() => setClubActiveTab('announcements')} 
+                      className={`pb-3 font-medium flex items-center gap-2 relative transition-colors ${clubActiveTab === 'announcements' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      <Megaphone size={18} /> Announcements
+                      {clubActiveTab === 'announcements' && <motion.div layoutId="clubTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />}
+                    </button>
+                    <button 
+                      onClick={() => setClubActiveTab('chat')} 
+                      className={`pb-3 font-medium flex items-center gap-2 relative transition-colors ${clubActiveTab === 'chat' ? 'text-teal-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      <MessageSquare size={18} /> Club Chat
+                      {clubActiveTab === 'chat' && <motion.div layoutId="clubTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-600" />}
+                    </button>
+                  </div>
+
+                  {clubActiveTab === 'announcements' && (
+                    <div className="space-y-4">
+                      {announcements.length === 0 ? (
+                        <p className="p-12 text-center text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-200">No announcements from this club yet.</p>
+                      ) : (
+                        announcements.map(ann => (
+                          <div key={ann._id} className="p-5 bg-blue-50/50 rounded-xl border border-blue-100 transition-all hover:bg-blue-50">
+                            <p className="text-gray-800 whitespace-pre-wrap">{ann.content}</p>
+                            <p className="text-xs text-blue-500 mt-3 font-medium flex items-center gap-1.5">
+                              <span className="w-5 h-5 bg-blue-200 rounded-full flex items-center justify-center text-blue-800 font-bold">{ann.createdBy?.name?.charAt(0)}</span>
+                              Posted by {ann.createdBy?.name} • {new Date(ann.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+
+                  {clubActiveTab === 'chat' && (
+                    <div className="max-w-4xl mx-auto">
+                      <ChatBox clubId={selectedMyClub._id} />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Events Section */}
         <div className="mockup-card">
           <div className="px-6 py-6 border-b border-gray-50 flex items-center justify-between">
@@ -277,35 +384,6 @@ const StudentDashboard = () => {
 
         {/* Clubs Section */}
         <div className="mockup-card">
-          {/* Recommendations Header */}
-          {recommendedClubs.length > 0 && (
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-orange-100 px-6 py-4">
-              <h4 className="text-sm font-bold text-orange-600 flex items-center gap-2 mb-3">
-                <Star size={16} className="fill-orange-500" /> Recommended For You
-              </h4>
-              <div className="space-y-3">
-                {recommendedClubs.map(club => (
-                  <div key={club._id} className="bg-white p-3 rounded-xl shadow-sm border border-orange-100 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">
-                        {club.clubName.substring(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900 text-sm">{club.clubName}</p>
-                        <p className="text-xs text-gray-500">{club.pendingRequests?.length || 0} pending requests</p>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={() => handleJoinClub(club._id)}
-                      className="px-4 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition-colors shadow-sm"
-                    >
-                      Join
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div className="px-6 py-6 flex items-center gap-3">
             <div className="p-2.5 bg-brand-secondary text-white rounded-xl shadow-sm">

@@ -3,12 +3,35 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, MapPin, Calendar, Users, Award, Shield, ArrowRight, BookOpen, Clock, Heart } from 'lucide-react';
 import axios from 'axios';
+import { AuthContext } from '../../context/AuthContext';
 
 const LandingPage = () => {
   const navigate = useNavigate();
   const [clubs, setClubs] = useState([]);
   const [events, setEvents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const { login, register } = React.useContext(AuthContext);
+  const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
+  
+  const [authForm, setAuthForm] = useState({
+    name: '', email: '', password: '', prn: '', department: '', year: '1'
+  });
+  const [authError, setAuthError] = useState('');
+
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    if (authMode === 'login') {
+      const res = await login(authForm.email, authForm.password);
+      if (!res.success) setAuthError(res.message);
+    } else {
+      const res = await register(
+        authForm.name, authForm.email, authForm.password, 'student',
+        authForm.prn, authForm.department, Number(authForm.year)
+      );
+      if (!res.success) setAuthError(res.message);
+    }
+  };
 
   useEffect(() => {
     // Fetch public data
@@ -38,35 +61,14 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans selection:bg-brand-primary selection:text-white overflow-x-hidden">
       
-      {/* Official College Header */}
-      <div className="bg-brand-dark text-white py-4 px-4 md:px-6 shadow-md z-50 relative">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-6">
-          <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
-            <img src="/images/dkte-logo.png" alt="DKTE Logo" className="h-12 md:h-16 w-auto object-contain bg-white rounded-lg p-1.5 shadow-md flex-shrink-0" />
-            <div>
-              <h1 className="text-base md:text-xl font-editorial font-bold tracking-wide leading-snug">
-                Dattajirao Kadam Education Society's Textile and Engineering Institute
-              </h1>
-              <p className="text-[10px] md:text-xs text-gray-300 font-bold tracking-wider uppercase mt-1">NBA and NAAC with A+ Grade</p>
-            </div>
-          </div>
-          <div className="flex gap-3 w-full lg:w-auto justify-center">
-            <button onClick={() => navigate('/login')} className="px-5 py-2 text-sm font-bold bg-white/10 hover:bg-white/20 transition-colors rounded-lg backdrop-blur-md">
-              Student Login
-            </button>
-            <button onClick={() => navigate('/register')} className="px-5 py-2 text-sm font-bold bg-white text-brand-dark hover:bg-gray-100 transition-colors rounded-lg shadow-sm">
-              Register
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Top spacing for fixed navbar if any, though we are flex-col in App.jsx */}
 
       {/* Running Marquee Text */}
-      <div className="bg-[#facc15] text-gray-900 py-2 overflow-hidden flex whitespace-nowrap relative z-40 shadow-md font-bold">
+      <div className="bg-[#facc15] text-gray-900 py-3 overflow-hidden flex items-center whitespace-nowrap relative z-40 shadow-md font-bold">
         <motion.div 
           animate={{ x: [0, -1000] }} 
           transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
-          className="flex gap-16 font-medium text-sm tracking-wide"
+          className="flex gap-16 items-center font-medium text-sm tracking-wide"
         >
           <span>• Explore over 50+ active student clubs</span>
           <span>• Register for upcoming hackathons and cultural fests</span>
@@ -103,23 +105,38 @@ const LandingPage = () => {
               </h1>
             </div>
 
-            {/* Right side: Smaller Search Bar */}
-            <div className="w-full md:w-auto min-w-[300px] md:min-w-[400px]">
-              <div className="bg-white/95 backdrop-blur-sm shadow-lg rounded-xl p-1.5 flex items-center border border-white/50">
-                <Search className="text-gray-400 ml-3 mr-2 flex-shrink-0" size={18} />
-                <input 
-                  type="text" 
-                  placeholder="Search clubs..." 
-                  className="w-full py-2 px-2 text-sm outline-none text-gray-800 bg-transparent placeholder-gray-500"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button 
-                  onClick={() => document.getElementById('clubs-section').scrollIntoView({ behavior: 'smooth' })}
-                  className="px-5 py-2 bg-[#2e1065] text-white font-bold text-sm rounded-lg hover:bg-opacity-90 transition-colors whitespace-nowrap shadow-sm"
-                >
-                  Explore
-                </button>
+            {/* Right side: Quick Auth Box */}
+            <div className="w-full md:w-auto min-w-[300px] md:min-w-[350px]">
+              <div className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-5 border border-white/50 h-[380px] flex flex-col">
+                <div className="flex gap-6 border-b border-gray-200 mb-4 pb-2">
+                  <button onClick={() => {setAuthMode('login'); setAuthError('');}} className={`text-sm font-bold transition-colors ${authMode === 'login' ? 'text-[#2e1065] border-b-2 border-[#2e1065]' : 'text-gray-400'}`}>
+                    Student Login
+                  </button>
+                  <button onClick={() => {setAuthMode('register'); setAuthError('');}} className={`text-sm font-bold transition-colors ${authMode === 'register' ? 'text-[#2e1065] border-b-2 border-[#2e1065]' : 'text-gray-400'}`}>
+                    Register
+                  </button>
+                </div>
+                
+                {authError && <div className="bg-red-50 text-red-600 text-xs p-2 rounded mb-3 font-medium">{authError}</div>}
+                
+                <form onSubmit={handleAuthSubmit} className="flex flex-col gap-3 flex-1">
+                  {authMode === 'register' && (
+                    <input type="text" placeholder="Full Name" required value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})} className="w-full py-2 px-3 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-[#2e1065]" />
+                  )}
+                  <input type="email" placeholder="Email Address" required value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})} className="w-full py-2 px-3 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-[#2e1065]" />
+                  <input type="password" placeholder="Password" required value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} className="w-full py-2 px-3 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-[#2e1065]" />
+                  
+                  {authMode === 'register' && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <input type="text" placeholder="PRN" required value={authForm.prn} onChange={e => setAuthForm({...authForm, prn: e.target.value})} className="w-full py-2 px-3 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-[#2e1065]" />
+                      <input type="text" placeholder="Dept" required value={authForm.department} onChange={e => setAuthForm({...authForm, department: e.target.value})} className="w-full py-2 px-3 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-[#2e1065]" />
+                    </div>
+                  )}
+                  
+                  <button type="submit" className="w-full py-2.5 bg-[#2e1065] text-white font-bold text-sm rounded-lg hover:bg-opacity-90 transition-colors shadow-sm mt-auto">
+                    {authMode === 'login' ? 'Sign In' : 'Create Account'}
+                  </button>
+                </form>
               </div>
             </div>
 

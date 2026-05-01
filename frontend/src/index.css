@@ -2,9 +2,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap');
 
 @theme {
-  --color-brand-primary: #8b5cf6; /* Vibrant Purple */
-  --color-brand-secondary: #ec4899; /* Vibrant Pink */
-  --color-brand-accent: #6366f1; /* Indigo */
+  --color-brand-primary: #6c63ff; /* Lavender / Purple */
+  --color-brand-secondary: #8ec5fc; /* Light Blue */
+  --color-brand-accent: #f472b6; /* Soft Pink / Coral */
   --color-brand-dark: #2e1065; /* Dark Purple for Navbar */
 }
 
@@ -20,10 +20,10 @@ body {
     font-family: 'Playfair Display', serif;
   }
   .glass-card {
-    @apply bg-white/70 backdrop-blur-md border border-white/40 shadow-xl;
+    @apply bg-white/50 backdrop-blur-md border border-white/60 shadow-[0_8px_24px_rgba(0,0,0,0.04)] rounded-2xl;
   }
   .mockup-card {
-    @apply bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden;
+    @apply bg-white/50 backdrop-blur-md shadow-[0_8px_24px_rgba(0,0,0,0.04)] border border-white/60 rounded-[20px] overflow-hidden transition-all duration-300 hover:shadow-[0_12px_32px_rgba(0,0,0,0.06)] hover:-translate-y-0.5;
   }
   .mockup-btn {
     @apply bg-gradient-to-r from-brand-accent via-brand-primary to-brand-secondary text-white font-bold rounded-xl shadow-md transition-all duration-300 hover:shadow-lg hover:shadow-brand-primary/30 hover:scale-[1.02] active:scale-95;

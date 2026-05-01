@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { LogOut, User as UserIcon } from 'lucide-react';
+import { LogOut, User as UserIcon, Home, Bell, MessageSquare } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
@@ -12,33 +12,52 @@ const Navbar = () => {
     navigate('/login');
   };
 
+
   return (
-    <nav className="bg-[#2e1065] shadow-md sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-20">
-          <div className="flex items-center">
+    <nav className="bg-[#2e1065] shadow-md sticky top-0 z-50 w-full">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16 items-center">
+          <div className="flex items-center gap-6">
             <Link to="/" className="flex-shrink-0 flex items-center gap-4 hover-lift">
               <img src="/images/dkte-logo.png" alt="DKTE Logo" className="h-10 w-auto bg-white rounded-lg p-1 shadow-md object-contain" />
-              <span className="font-extrabold text-2xl text-white tracking-tight">DKTE Campus Portal</span>
+              <span className="font-extrabold text-xl text-white tracking-tight hidden sm:block">DKTE Campus Portal</span>
             </Link>
           </div>
           
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3 text-sm text-white bg-white/10 border border-white/20 shadow-sm px-5 py-2.5 rounded-full backdrop-blur-sm">
-              <UserIcon size={18} className="text-white" />
-              <span className="font-bold text-base">{user?.name || 'User'}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-white text-[#2e1065] px-3 py-1 rounded-full ml-2 shadow-sm">
-                {user?.role.replace('_', ' ')}
-              </span>
-            </div>
+          <div className="flex items-center gap-4">
+            <Link to="/" className="flex items-center gap-2 text-white/90 hover:text-white font-semibold transition-colors bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-sm border border-white/10">
+              <Home size={16} />
+              Home
+            </Link>
             
-            <button
-              onClick={handleLogout}
-              className="p-3 text-white/80 hover:text-white bg-white/5 hover:bg-white/20 border border-transparent hover:border-white/30 transition-all duration-300 rounded-xl"
-              title="Logout"
-            >
-              <LogOut size={20} />
-            </button>
+            {user ? (
+              <div className="flex items-center gap-4">
+                <div className="hidden md:flex items-center gap-4 ml-2">
+                  <button className="relative p-2 text-white/80 hover:text-white transition-colors">
+                    <Bell size={20} />
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-pink-500 rounded-full border border-[#2e1065]"></span>
+                  </button>
+                  <button className="p-2 text-white/80 hover:text-white transition-colors">
+                    <MessageSquare size={20} />
+                  </button>
+                </div>
+                
+                <div className="flex items-center gap-3 text-sm text-[#2e1065] bg-white px-4 py-2 rounded-full shadow-sm ml-2">
+                  <span className="font-bold">{user?.name || 'User'}</span>
+                  <span className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-[#2e1065] px-2 py-0.5 rounded-full shadow-sm">
+                    {user?.role.replace('_', ' ')}
+                  </span>
+                </div>
+                
+                <button
+                  onClick={handleLogout}
+                  className="p-2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 transition-all duration-300 rounded-full ml-1"
+                  title="Logout"
+                >
+                  <LogOut size={18} />
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

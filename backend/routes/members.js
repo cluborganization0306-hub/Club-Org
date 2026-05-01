@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getMembers, enrollMember, getMyMemberships, approveMember, removeMember } = require('../controllers/members');
+const { getMembers, enrollMember, getMyMemberships, approveMember, removeMember, updatePosition } = require('../controllers/members');
 const { protect } = require('../middleware/authMiddleware');
 const { authorizeRoles } = require('../middleware/roleMiddleware');
 
@@ -18,5 +18,8 @@ router.route('/:id/approve')
 
 router.route('/:id/remove')
   .delete(protect, authorizeRoles('club_head', 'admin'), removeMember);
+
+router.route('/:id/position')
+  .put(protect, authorizeRoles('club_head', 'admin'), updatePosition);
 
 module.exports = router;

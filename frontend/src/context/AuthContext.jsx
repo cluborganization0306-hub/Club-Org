@@ -8,12 +8,28 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in
-    const userInfo = localStorage.getItem('userInfo');
-    if (userInfo) {
-      setUser(JSON.parse(userInfo));
-    }
-    setLoading(false);
+    const initAuth = async () => {
+      const userInfo = localStorage.getItem('userInfo');
+      if (userInfo) {
+        const parsedUser = JSON.parse(userInfo);
+        setUser(parsedUser);
+        
+        try {
+          // Sync with server to get latest role and info
+          const { data } = await axios.get((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/auth/me', {
+            headers: { Authorization: `Bearer ${parsedUser.token}` }
+          });
+          const updatedUser = { ...parsedUser, ...data };
+          setUser(updatedUser);
+          localStorage.setItem('userInfo', JSON.stringify(updatedUser));
+        } catch (error) {
+          console.error("Session sync failed", error);
+        }
+      }
+      setLoading(false);
+    };
+    
+    initAuth();
   }, []);
 
   const login = async (email, password) => {

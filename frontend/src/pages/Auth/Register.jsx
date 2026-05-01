@@ -8,7 +8,6 @@ const Register = () => {
     name: '',
     email: '',
     password: '',
-    role: 'student',
     prn: '',
     department: '',
     year: '1'
@@ -20,16 +19,15 @@ const Register = () => {
     e.preventDefault();
     setError('');
     
-    // Only pass extra fields if student
-    const prn = formData.role === 'student' ? formData.prn : undefined;
-    const department = formData.role === 'student' ? formData.department : undefined;
-    const year = formData.role === 'student' ? Number(formData.year) : undefined;
+    const prn = formData.prn;
+    const department = formData.department;
+    const year = Number(formData.year);
     
     const res = await register(
       formData.name, 
       formData.email, 
       formData.password, 
-      formData.role, 
+      'student', 
       prn, 
       department, 
       year
@@ -101,22 +99,7 @@ const Register = () => {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-            <select
-              name="role"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all bg-white"
-              value={formData.role}
-              onChange={handleChange}
-            >
-              <option value="student">Student</option>
-              <option value="club_head">Club Head</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-
-          {formData.role === 'student' && (
-            <div className="space-y-5 bg-gray-50 p-4 rounded-lg border border-gray-100">
+          <div className="space-y-5 bg-gray-50 p-4 rounded-lg border border-gray-100">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">PRN</label>
                 <input
@@ -159,7 +142,6 @@ const Register = () => {
                 </div>
               </div>
             </div>
-          )}
 
           <button
             type="submit"

@@ -35,6 +35,16 @@ const assignClubHead = async (req, res) => {
     
     club.clubHeadId = clubHeadId;
     await club.save();
+
+    // Upgrade user role if they are a student
+    if (clubHeadId) {
+      const user = await User.findById(clubHeadId);
+      if (user && user.role === 'student') {
+        user.role = 'club_head';
+        await user.save();
+      }
+    }
+
     res.json(club);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -72,6 +82,16 @@ const approveRequest = async (req, res) => {
     club.clubHeadId = userId;
     club.pendingRequests = []; // clear requests once approved
     await club.save();
+
+    // Upgrade user role if they are a student
+    if (userId) {
+      const user = await User.findById(userId);
+      if (user && user.role === 'student') {
+        user.role = 'club_head';
+        await user.save();
+      }
+    }
+
     res.json({ message: 'Club Head approved successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -104,7 +124,17 @@ const updateClub = async (req, res) => {
 
     club.clubName = clubName || club.clubName;
     club.description = description || club.description;
-    if (clubHeadId !== undefined) club.clubHeadId = clubHeadId;
+    if (clubHeadId !== undefined) {
+      club.clubHeadId = clubHeadId;
+      // Upgrade user role if they are a student
+      if (clubHeadId) {
+        const user = await User.findById(clubHeadId);
+        if (user && user.role === 'student') {
+          user.role = 'club_head';
+          await user.save();
+        }
+      }
+    }
     if (logoUrl !== undefined) club.logoUrl = logoUrl;
 
     await club.save();

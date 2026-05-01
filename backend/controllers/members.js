@@ -55,7 +55,7 @@ const approveMember = async (req, res) => {
     const club = await Club.findById(member.clubId);
     if (!club) return res.status(404).json({ message: 'Club not found' });
 
-    if (req.user.role !== 'admin' && (!club.clubHeadId || !club.clubHeadId.equals(req.user._id))) {
+    if (req.user.role !== 'admin' && (!club.clubHeadId || club.clubHeadId.toString() !== req.user._id.toString())) {
       return res.status(403).json({ message: 'Not authorized to approve members for this club' });
     }
 
@@ -77,7 +77,7 @@ const removeMember = async (req, res) => {
     const club = await Club.findById(member.clubId);
     if (!club) return res.status(404).json({ message: 'Club not found' });
 
-    if (req.user.role !== 'admin' && (!club.clubHeadId || !club.clubHeadId.equals(req.user._id))) {
+    if (req.user.role !== 'admin' && (!club.clubHeadId || club.clubHeadId.toString() !== req.user._id.toString())) {
       return res.status(403).json({ message: 'Not authorized to remove members for this club' });
     }
 
@@ -89,4 +89,27 @@ const removeMember = async (req, res) => {
   }
 };
 
-module.exports = { getMembers, enrollMember, getMyMemberships, approveMember, removeMember };
+// Update member position
+const updatePosition = async (req, res) => {
+  const { id } = req.params;
+  const { position } = req.body;
+  try {
+    const member = await Member.findById(id);
+    if (!member) return res.status(404).json({ message: 'Member not found' });
+    
+    const club = await Club.findById(member.clubId);
+    if (!club) return res.status(404).json({ message: 'Club not found' });
+
+    if (req.user.role !== 'admin' && (!club.clubHeadId || club.clubHeadId.toString() !== req.user._id.toString())) {
+      return res.status(403).json({ message: 'Not authorized to modify members for this club' });
+    }
+
+    member.position = position;
+    await member.save();
+    res.json({ message: 'Position updated successfully', member });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getMembers, enrollMember, getMyMemberships, approveMember, removeMember, updatePosition };

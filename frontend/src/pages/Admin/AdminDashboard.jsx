@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
-import { Shield, Plus, Building, UserCheck, Check, X, Image as ImageIcon, Settings } from 'lucide-react';
+import { Shield, Plus, Building, UserCheck, Check, X, Image as ImageIcon, Settings, Users, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
@@ -9,7 +9,13 @@ const AdminDashboard = () => {
   const { getAuthHeaders } = useContext(AuthContext);
   const [clubs, setClubs] = useState([]);
   const [clubHeads, setClubHeads] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   
+  const [studentModalOpen, setStudentModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [assignClubId, setAssignClubId] = useState('');
+
   const [newClub, setNewClub] = useState({ clubName: '', description: '' });
   const [imageFile, setImageFile] = useState(null);
 
@@ -25,6 +31,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchClubs();
     fetchClubHeads();
+    fetchStudents();
   }, []);
 
   const fetchClubs = async () => {
@@ -42,6 +49,15 @@ const AdminDashboard = () => {
       setClubHeads(res.data);
     } catch (error) {
       console.error("Error fetching users", error);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const res = await axios.get((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/users?role=student', { headers: getAuthHeaders() });
+      setStudents(res.data);
+    } catch (error) {
+      console.error("Error fetching students", error);
     }
   };
 
@@ -148,6 +164,24 @@ const AdminDashboard = () => {
       fetchClubs();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete club");
+    }
+  };
+
+  const handleAssignPresident = async (e) => {
+    e.preventDefault();
+    if (!assignClubId) {
+      toast.error('Please select a club');
+      return;
+    }
+    try {
+      await axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/clubs/${assignClubId}/assign-head`, { clubHeadId: selectedStudent._id }, { headers: getAuthHeaders() });
+      toast.success(`${selectedStudent.name} is now President of the selected club!`);
+      setStudentModalOpen(false);
+      fetchClubs();
+      fetchClubHeads();
+      fetchStudents(); // Refresh to remove the student from the list since role is now club_head
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to assign president');
     }
   };
 
@@ -353,6 +387,75 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+      {/* Registered Students Section */}
+      <div className="mockup-card mt-8">
+        <div className="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white/30 backdrop-blur-sm">
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <Users size={20} className="text-brand-primary" /> Registered Students
+          </h3>
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <input 
+              type="text" 
+              placeholder="Search name, email, PRN..." 
+              className="w-full pl-9 pr-4 py-2 bg-white/50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-primary/50 outline-none transition-all"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-white/20 border-b border-gray-100 text-sm font-medium text-gray-500">
+                <th className="px-6 py-4">Name</th>
+                <th className="px-6 py-4">PRN</th>
+                <th className="px-6 py-4">Department</th>
+                <th className="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100/50">
+              {students.filter(s => 
+                s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                s.email.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                (s.prn && s.prn.toLowerCase().includes(searchQuery.toLowerCase()))
+              ).length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="px-6 py-8 text-center text-gray-500">No students found</td>
+                </tr>
+              ) : (
+                students.filter(s => 
+                  s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                  s.email.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                  (s.prn && s.prn.toLowerCase().includes(searchQuery.toLowerCase()))
+                ).map(student => (
+                  <tr key={student._id} className="hover:bg-white/30 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-semibold text-gray-900">{student.name}</div>
+                      <div className="text-xs text-gray-500">{student.email}</div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">{student.prn || 'N/A'}</td>
+                    <td className="px-6 py-4 text-gray-600">{student.department || 'N/A'}</td>
+                    <td className="px-6 py-4 text-right">
+                      <button 
+                        onClick={() => {
+                          setSelectedStudent(student);
+                          setAssignClubId('');
+                          setStudentModalOpen(true);
+                        }}
+                        className="px-3 py-1.5 bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/20 rounded-lg text-sm font-bold inline-flex items-center gap-1.5 transition-colors"
+                      >
+                        <Shield size={14} /> Assign President
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Settings Modal */}
       <AnimatePresence>
       {settingsModalOpen && selectedClub && (
@@ -444,6 +547,68 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </form>
+          </motion.div>
+        </div>
+      )}
+      </AnimatePresence>
+
+      {/* Student Assignment Modal */}
+      <AnimatePresence>
+      {studentModalOpen && selectedStudent && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div 
+            variants={modalVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+          >
+            <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white/50">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Shield className="text-brand-primary" size={20} /> Assign President
+              </h3>
+              <button onClick={() => setStudentModalOpen(false)} className="text-gray-400 hover:text-gray-600">&times;</button>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-6 bg-gray-50/50 p-4 rounded-xl border border-gray-100">
+                <h4 className="font-bold text-gray-900 text-lg">{selectedStudent.name}</h4>
+                <div className="text-sm text-gray-600 mt-1 grid grid-cols-2 gap-2">
+                  <p><strong>Email:</strong> {selectedStudent.email}</p>
+                  <p><strong>PRN:</strong> {selectedStudent.prn || 'N/A'}</p>
+                  <p><strong>Dept:</strong> {selectedStudent.department || 'N/A'}</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleAssignPresident} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Select Club to Lead</label>
+                  <select 
+                    required
+                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-primary/50 outline-none transition-all"
+                    value={assignClubId}
+                    onChange={e => setAssignClubId(e.target.value)}
+                  >
+                    <option value="">-- Choose a Club --</option>
+                    {clubs.map(club => (
+                      <option key={club._id} value={club._id}>{club.clubName}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Assigning this student will automatically change their account role to <strong className="text-brand-primary">Club Head</strong>.
+                  </p>
+                </div>
+
+                <div className="flex gap-3 pt-4 border-t border-gray-100">
+                  <button type="button" onClick={() => setStudentModalOpen(false)} className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-colors">
+                    Cancel
+                  </button>
+                  <button type="submit" className="flex-1 px-4 py-2.5 mockup-btn">
+                    Confirm Assignment
+                  </button>
+                </div>
+              </form>
+            </div>
           </motion.div>
         </div>
       )}
