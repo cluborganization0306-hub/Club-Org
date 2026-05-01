@@ -48,8 +48,6 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 const PORT = process.env.PORT || 5000;
 let MONGO_URI = process.env.MONGO_URI;
 
-const seedDatabase = require('./utils/seedData');
-
 const connectDB = async () => {
   try {
     if (!MONGO_URI) {
@@ -60,9 +58,6 @@ const connectDB = async () => {
     
     await mongoose.connect(MONGO_URI);
     console.log('MongoDB Connected');
-    
-    // Seed Database
-    await seedDatabase();
   } catch (err) {
     console.error(err);
     process.exit(1);

@@ -178,9 +178,13 @@ const ClubHeadDashboard = () => {
   const myClubs = clubs.filter(c => c.clubHeadId && c.clubHeadId._id === user._id);
   const availableClubs = clubs.filter(c => !c.clubHeadId);
 
+  // Filter events for my clubs
+  const myClubIds = myClubs.map(c => c._id);
+  const myEvents = events.filter(e => e.clubId && myClubIds.includes(typeof e.clubId === 'object' ? e.clubId._id : e.clubId));
+
   // Derived Performance Metrics
-  const totalEvents = events.length;
-  const totalParticipants = events.reduce((acc, curr) => acc + curr.participants.length, 0);
+  const totalEvents = myEvents.length;
+  const totalParticipants = myEvents.reduce((acc, curr) => acc + curr.participants.length, 0);
   const avgParticipants = totalEvents > 0 ? (totalParticipants / totalEvents).toFixed(1) : 0;
   const totalExpenses = budget.expenses.reduce((acc, curr) => acc + curr.cost, 0);
   const remainingBudget = budget.amount - totalExpenses;
@@ -308,10 +312,10 @@ const ClubHeadDashboard = () => {
               <h3 className="text-lg font-semibold text-gray-900">Manage Events</h3>
             </div>
             <div className="divide-y divide-gray-100">
-              {events.length === 0 ? (
-                <p className="p-6 text-gray-500 text-center">No events found.</p>
+              {myEvents.length === 0 ? (
+                <p className="p-6 text-gray-500 text-center">No events found for your club.</p>
               ) : (
-                events.map(event => (
+                myEvents.map(event => (
                   <div key={event._id} className="p-6 hover:bg-gray-50 flex justify-between items-center">
                     <div>
                       <h4 className="font-semibold text-gray-900">{event.title}</h4>
