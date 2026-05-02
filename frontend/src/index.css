@@ -1,11 +1,17 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap');
+@import "tailwindcss";
 
 @theme {
   --color-brand-primary: #6c63ff; /* Lavender / Purple */
   --color-brand-secondary: #8ec5fc; /* Light Blue */
   --color-brand-accent: #f472b6; /* Soft Pink / Coral */
   --color-brand-dark: #2e1065; /* Dark Purple for Navbar */
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
 }
 
 body {

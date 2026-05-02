@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { io } from 'socket.io-client';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ChatBox = ({ clubId }) => {
@@ -60,6 +60,26 @@ const ChatBox = ({ clubId }) => {
     setNewMessage('');
   };
 
+  const handleDeleteMessage = async (msgId) => {
+    if (!window.confirm('Delete this message?')) return;
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/chat/message/${msgId}`, { headers: getAuthHeaders() });
+      setMessages(prev => prev.filter(m => m._id !== msgId));
+      toast.success('Message deleted');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete');
+    }
+  };
+
+  // Determine if user can delete this message
+  // Club Heads & Admins can delete anything, sender can delete own
+  const canDelete = (msg) => {
+    if (user.role === 'admin' || user.role === 'club_head') return true;
+    const senderId = msg.senderId?._id || msg.senderId;
+    if (senderId === user._id) return true;
+    return false;
+  };
+
   if (isLoading) {
     return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-indigo-500" /></div>;
   }
@@ -78,11 +98,21 @@ const ChatBox = ({ clubId }) => {
           messages.map((msg, idx) => {
             const isMe = msg.senderId?._id === user._id || msg.senderId === user._id;
             return (
-              <div key={idx} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+              <div key={idx} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} group relative`}>
                 <span className="text-xs text-gray-500 mb-1 ml-1">{msg.senderId?.name || 'User'}</span>
-                <div className={`px-4 py-2 rounded-2xl max-w-[80%] ${isMe ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm shadow-sm'}`}>
+                <div className={`px-4 py-2 rounded-2xl max-w-[90%] relative break-words ${isMe ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm shadow-sm'}`}>
                   {msg.content}
                 </div>
+                {/* Delete button */}
+                {canDelete(msg) && msg._id && (
+                  <button
+                    onClick={() => handleDeleteMessage(msg._id)}
+                    className={`absolute top-5 ${isMe ? '-left-8' : '-right-8'} p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600`}
+                    title="Delete message"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                )}
               </div>
             );
           })

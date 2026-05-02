@@ -21,13 +21,16 @@ import ClubHeadDashboard from './pages/ClubHead/ClubHeadDashboard';
 import StudentDashboard from './pages/Student/StudentDashboard';
 import AttendEvent from './pages/Student/AttendEvent';
 
+// Settings
+import SettingsPage from './pages/Settings/SettingsPage';
+
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useContext(AuthContext);
 
   if (loading) return <div>Loading...</div>;
 
   if (!user) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/" />;
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
@@ -50,10 +53,10 @@ function App() {
   return (
     <Router>
       <Toaster position="bottom-right" richColors toastOptions={{ style: { fontFamily: 'Inter' } }} />
-      <div className="h-screen w-full flex flex-col bg-gray-50 overflow-hidden">
+      <div className="fixed inset-0 w-full flex flex-col bg-gray-50 overflow-hidden">
         <Navbar />
         
-        <div className="flex-1 overflow-hidden flex flex-col relative z-0">
+        <div className="flex-1 overflow-auto flex flex-col relative z-0">
           <Routes>
             {/* Landing Page Route */}
             <Route path="/" element={!user ? <LandingPage /> : <Navigate to={getHomeRoute()} />} />
@@ -87,6 +90,13 @@ function App() {
               <Route path="/attend/:eventId" element={
                 <ProtectedRoute allowedRoles={['student']}>
                   <AttendEvent />
+                </ProtectedRoute>
+              } />
+
+              {/* Settings - accessible to all roles */}
+              <Route path="/settings" element={
+                <ProtectedRoute allowedRoles={['student', 'club_head', 'admin']}>
+                  <SettingsPage />
                 </ProtectedRoute>
               } />
             </Route>

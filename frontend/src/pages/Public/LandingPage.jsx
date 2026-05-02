@@ -82,59 +82,61 @@ const LandingPage = () => {
       </div>
 
       {/* Hero Section */}
-      <section className="relative h-[70vh] flex flex-col justify-end bg-gray-900">
-        {/* Main Photo Background - 100% Original, No Editing/Overlays */}
+      <section className="relative min-h-[85vh] flex flex-col justify-center bg-gray-900">
+        {/* Main Photo Background - Full cover, no crop */}
         <div className="absolute inset-0 z-0">
           <img src="/images/dkte-photo-rotated.jpg" alt="DKTE Campus" className="w-full h-full object-cover object-center" />
+          {/* Overlay to ensure text readability since it's centered now */}
+          <div className="absolute inset-0 bg-black/40"></div>
         </div>
         
-        {/* Content at the bottom */}
-        <div className="relative z-10 w-full bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-32 pb-8 px-6">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-end justify-between gap-6">
+        {/* Content centered */}
+        <div className="relative z-10 w-full px-6 py-12">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
             
-            {/* Left side: Smaller text */}
+            {/* Left side: Text */}
             <div>
-              <span className="inline-block py-1 px-3 rounded-md bg-white/20 text-white font-bold text-xs tracking-wide mb-3 backdrop-blur-sm shadow-sm">
-                Welcome to the Official Campus Portal
+              <span className="inline-block py-1.5 px-4 rounded-full bg-white/15 text-white font-bold text-xs tracking-wide mb-4 backdrop-blur-md border border-white/20 shadow-lg">
+                ✨ Welcome to the Official Campus Portal
               </span>
-              <h1 className="text-3xl md:text-4xl font-editorial font-extrabold text-white tracking-tight leading-tight drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+              <h1 className="text-3xl md:text-5xl font-editorial font-extrabold text-white tracking-tight leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                 Discover Your Passion.<br />
-                <span className="text-[#facc15] drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                <span className="text-[#facc15] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                   Shape Campus Culture.
                 </span>
               </h1>
             </div>
 
-            {/* Right side: Quick Auth Box */}
-            <div className="w-full md:w-auto min-w-[300px] md:min-w-[350px]">
-              <div className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl p-5 border border-white/50 h-[380px] flex flex-col">
-                <div className="flex gap-6 border-b border-gray-200 mb-4 pb-2">
-                  <button onClick={() => {setAuthMode('login'); setAuthError('');}} className={`text-sm font-bold transition-colors ${authMode === 'login' ? 'text-[#2e1065] border-b-2 border-[#2e1065]' : 'text-gray-400'}`}>
+            {/* Right side: Glassmorphism Auth Box */}
+            <div className="w-full md:w-auto min-w-[300px] md:min-w-[370px]">
+              <div className="bg-white/10 backdrop-blur-xl shadow-2xl rounded-2xl p-6 border border-white/20 min-h-[380px] flex flex-col transition-all duration-500 hover:bg-white/15 hover:shadow-[0_8px_40px_rgba(108,99,255,0.25)] hover:border-white/30 group">
+                <div className="flex gap-6 border-b border-white/20 mb-5 pb-3">
+                  <button onClick={() => {setAuthMode('login'); setAuthError('');}} className={`text-sm font-bold transition-all duration-300 pb-1 ${authMode === 'login' ? 'text-[#facc15] border-b-2 border-[#facc15] scale-105' : 'text-white/60 hover:text-white/90'}`}>
                     Student Login
                   </button>
-                  <button onClick={() => {setAuthMode('register'); setAuthError('');}} className={`text-sm font-bold transition-colors ${authMode === 'register' ? 'text-[#2e1065] border-b-2 border-[#2e1065]' : 'text-gray-400'}`}>
+                  <button onClick={() => {setAuthMode('register'); setAuthError('');}} className={`text-sm font-bold transition-all duration-300 pb-1 ${authMode === 'register' ? 'text-[#facc15] border-b-2 border-[#facc15] scale-105' : 'text-white/60 hover:text-white/90'}`}>
                     Register
                   </button>
                 </div>
                 
-                {authError && <div className="bg-red-50 text-red-600 text-xs p-2 rounded mb-3 font-medium">{authError}</div>}
+                {authError && <div className="bg-red-500/20 backdrop-blur-sm text-red-200 text-xs p-2.5 rounded-lg mb-3 font-medium border border-red-400/30">{authError}</div>}
                 
                 <form onSubmit={handleAuthSubmit} className="flex flex-col gap-3 flex-1">
                   {authMode === 'register' && (
-                    <input type="text" placeholder="Full Name" required value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})} className="w-full py-2 px-3 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-[#2e1065]" />
+                    <input type="text" placeholder="Full Name" required value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})} className="w-full py-2.5 px-4 text-sm bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl outline-none focus:border-[#facc15] focus:bg-white/15 focus:shadow-[0_0_15px_rgba(250,204,21,0.15)] text-white placeholder-white/50 transition-all duration-300" />
                   )}
-                  <input type="email" placeholder="Email Address" required value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})} className="w-full py-2 px-3 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-[#2e1065]" />
-                  <input type="password" placeholder="Password" required value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} className="w-full py-2 px-3 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-[#2e1065]" />
+                  <input type="email" placeholder="Email Address" required value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})} className="w-full py-2.5 px-4 text-sm bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl outline-none focus:border-[#facc15] focus:bg-white/15 focus:shadow-[0_0_15px_rgba(250,204,21,0.15)] text-white placeholder-white/50 transition-all duration-300" />
+                  <input type="password" placeholder="Password" required value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} className="w-full py-2.5 px-4 text-sm bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl outline-none focus:border-[#facc15] focus:bg-white/15 focus:shadow-[0_0_15px_rgba(250,204,21,0.15)] text-white placeholder-white/50 transition-all duration-300" />
                   
                   {authMode === 'register' && (
                     <div className="grid grid-cols-2 gap-2">
-                      <input type="text" placeholder="PRN" required value={authForm.prn} onChange={e => setAuthForm({...authForm, prn: e.target.value})} className="w-full py-2 px-3 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-[#2e1065]" />
-                      <input type="text" placeholder="Dept" required value={authForm.department} onChange={e => setAuthForm({...authForm, department: e.target.value})} className="w-full py-2 px-3 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-[#2e1065]" />
+                      <input type="text" placeholder="PRN" required value={authForm.prn} onChange={e => setAuthForm({...authForm, prn: e.target.value})} className="w-full py-2.5 px-4 text-sm bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl outline-none focus:border-[#facc15] focus:bg-white/15 text-white placeholder-white/50 transition-all duration-300" />
+                      <input type="text" placeholder="Dept" required value={authForm.department} onChange={e => setAuthForm({...authForm, department: e.target.value})} className="w-full py-2.5 px-4 text-sm bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl outline-none focus:border-[#facc15] focus:bg-white/15 text-white placeholder-white/50 transition-all duration-300" />
                     </div>
                   )}
                   
-                  <button type="submit" className="w-full py-2.5 bg-[#2e1065] text-white font-bold text-sm rounded-lg hover:bg-opacity-90 transition-colors shadow-sm mt-auto">
-                    {authMode === 'login' ? 'Sign In' : 'Create Account'}
+                  <button type="submit" className="w-full py-3 bg-gradient-to-r from-[#facc15] to-[#f59e0b] text-[#2e1065] font-extrabold text-sm rounded-xl hover:shadow-[0_4px_25px_rgba(250,204,21,0.4)] hover:scale-[1.02] active:scale-95 transition-all duration-300 mt-auto">
+                    {authMode === 'login' ? '🚀 Sign In' : '✨ Create Account'}
                   </button>
                 </form>
               </div>
@@ -164,9 +166,8 @@ const LandingPage = () => {
               events.map((event, index) => (
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1, duration: 0.4 }}
                   key={event._id} 
                   className="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-gray-100/50 overflow-hidden hover:-translate-y-2 transition-transform duration-300 flex flex-col"
                 >
@@ -201,7 +202,7 @@ const LandingPage = () => {
       </section>
 
       {/* Active Clubs Showcase */}
-      <section id="clubs-section" className="py-24 bg-gray-900 text-white relative overflow-hidden">
+      <section id="clubs-section" className="py-24 bg-gray-900 text-white relative">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="text-center mb-16">
@@ -210,39 +211,36 @@ const LandingPage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredClubs.slice(0, 8).map((club, index) => (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-                key={club._id} 
-                className="bg-gray-800/50 backdrop-blur-md border border-gray-700 rounded-2xl p-6 hover:bg-gray-800 transition-colors group cursor-pointer"
-                onClick={handleActionClick}
-              >
-                <div className="w-16 h-16 rounded-2xl bg-gray-700 flex items-center justify-center text-2xl font-bold mb-4 group-hover:bg-brand-primary transition-colors">
-                  {club.logoUrl ? (
-                    <img src={club.logoUrl} alt={club.clubName} className="w-full h-full object-cover rounded-2xl" />
-                  ) : (
-                    club.clubName.substring(0, 2).toUpperCase()
-                  )}
+            {filteredClubs.length === 0 ? (
+              <div className="col-span-4 text-center py-12">
+                <Users size={48} className="mx-auto text-gray-600 mb-4" />
+                <p className="text-gray-400 text-lg">No clubs found.</p>
+              </div>
+            ) : (
+              filteredClubs.map((club) => (
+                <div 
+                  key={club._id} 
+                  className="bg-gray-800/50 backdrop-blur-md border border-gray-700 rounded-2xl p-6 hover:bg-gray-700/60 transition-all duration-300 group cursor-pointer hover:-translate-y-1 hover:shadow-lg hover:shadow-brand-primary/20 hover:border-brand-primary/50"
+                  onClick={handleActionClick}
+                >
+                  <div className="w-16 h-16 rounded-2xl bg-gray-700 flex items-center justify-center text-2xl font-bold mb-4 group-hover:bg-brand-primary transition-colors text-white">
+                    {club.logoUrl && club.logoUrl.trim() !== '' ? (
+                      <img src={club.logoUrl} alt={club.clubName} className="w-full h-full object-cover rounded-2xl" />
+                    ) : (
+                      club.clubName.substring(0, 2).toUpperCase()
+                    )}
+                  </div>
+                  <h3 className="text-xl font-bold mb-2 text-white">{club.clubName}</h3>
+                  <p className="text-gray-400 text-sm line-clamp-2 mb-4">{club.description || 'No description available'}</p>
+                  <div className="flex items-center text-xs font-bold text-brand-primary group-hover:text-white transition-colors mt-auto">
+                    Join Club <ArrowRight size={14} className="ml-1" />
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold mb-2">{club.clubName}</h3>
-                <p className="text-gray-400 text-sm line-clamp-2 mb-4">{club.description}</p>
-                <div className="flex items-center text-xs font-bold text-brand-primary group-hover:text-white transition-colors mt-auto">
-                  Join Club <ArrowRight size={14} className="ml-1" />
-                </div>
-              </motion.div>
-            ))}
+              ))
+            )}
           </div>
           
-          {filteredClubs.length > 8 && (
-            <div className="text-center mt-12">
-              <button onClick={handleActionClick} className="px-8 py-4 bg-transparent border border-gray-600 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors">
-                View All {clubs.length} Clubs
-              </button>
-            </div>
-          )}
+          {/* All clubs are now shown above */}
         </div>
       </section>
 

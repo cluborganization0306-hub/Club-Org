@@ -15,17 +15,15 @@ const getEvents = async (req, res) => {
 
 // Create a new event (Club Head)
 const createEvent = async (req, res) => {
-  const { title, description, date, clubId } = req.body;
+  const { title, description, date, clubId, imageUrl } = req.body;
   try {
     const club = await Club.findById(clubId);
     if (!club) return res.status(404).json({ message: 'Club not found' });
     
-    // Check if the user is the head of this club or an admin
     if (req.user.role !== 'admin' && (!club.clubHeadId || !club.clubHeadId.equals(req.user._id))) {
       return res.status(403).json({ message: 'Not authorized to create event for this club' });
     }
 
-    // Conflict Detection: check if any event is scheduled within 1 hour
     const eventDate = new Date(date);
     const oneHourBefore = new Date(eventDate.getTime() - 60 * 60 * 1000);
     const oneHourAfter = new Date(eventDate.getTime() + 60 * 60 * 1000);
@@ -38,7 +36,7 @@ const createEvent = async (req, res) => {
       return res.status(400).json({ message: 'Conflict: Another event is scheduled within 1 hour of this time.' });
     }
 
-    const newEvent = await Event.create({ title, description, date, clubId });
+    const newEvent = await Event.create({ title, description, date, clubId, imageUrl });
     res.status(201).json(newEvent);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -85,4 +83,29 @@ const markAttendance = async (req, res) => {
   }
 };
 
-module.exports = { getEvents, createEvent, participateInEvent, markAttendance };
+// Delete an event (club head of that club or admin)
+const deleteEvent = async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) return res.status(404).json({ message: 'Event not found' });
+
+    // Admin can delete any event
+    if (req.user.role === 'admin') {
+      await Event.findByIdAndDelete(req.params.id);
+      return res.json({ message: 'Event deleted successfully' });
+    }
+
+    // Club head can delete events of their club
+    const club = await Club.findById(event.clubId);
+    if (club && club.clubHeadId && club.clubHeadId.equals(req.user._id)) {
+      await Event.findByIdAndDelete(req.params.id);
+      return res.json({ message: 'Event deleted successfully' });
+    }
+
+    return res.status(403).json({ message: 'Not authorized to delete this event' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getEvents, createEvent, participateInEvent, markAttendance, deleteEvent };

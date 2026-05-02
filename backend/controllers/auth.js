@@ -9,7 +9,8 @@ const generateToken = (id) => {
 };
 
 const registerUser = async (req, res) => {
-  const { name, email, password, role, prn, department, year } = req.body;
+  const { name, password, role, prn, department, year } = req.body;
+  const email = req.body.email?.trim().toLowerCase();
 
   try {
     const userExists = await User.findOne({ email });
@@ -47,7 +48,8 @@ const registerUser = async (req, res) => {
 };
 
 const loginUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { password } = req.body;
+  const email = req.body.email?.trim().toLowerCase();
 
   try {
     const user = await User.findOne({ email });
@@ -81,4 +83,40 @@ const getMe = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getMe };
+// Update user profile (any logged-in user)
+const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const { name, email, password, prn, department, year } = req.body;
+
+    if (name) user.name = name;
+    if (email) user.email = email.trim().toLowerCase();
+    if (prn) user.prn = prn;
+    if (department) user.department = department;
+    if (year) user.year = year;
+    
+    if (password && password.trim().length >= 6) {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+    }
+
+    const updatedUser = await user.save();
+
+    res.json({
+      _id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      prn: updatedUser.prn,
+      department: updatedUser.department,
+      year: updatedUser.year,
+      token: generateToken(updatedUser.id)
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { registerUser, loginUser, getMe, updateProfile };

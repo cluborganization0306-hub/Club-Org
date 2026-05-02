@@ -297,9 +297,13 @@ const StudentDashboard = () => {
                       <motion.div variants={itemVariants} key={event._id} className="mx-6 mb-4 p-5 bg-brand-primary/5 rounded-2xl transition-all duration-200 hover:bg-brand-primary/10 border border-transparent hover:border-brand-primary/20">
                         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                           <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 flex-shrink-0 bg-brand-primary text-white rounded-full flex items-center justify-center shadow-md">
-                              <Trophy size={24} />
-                            </div>
+                            {event.imageUrl ? (
+                              <img src={event.imageUrl} alt={event.title} className="w-14 h-14 rounded-2xl object-cover shadow-sm flex-shrink-0 border border-brand-primary/20" />
+                            ) : (
+                              <div className="w-14 h-14 flex-shrink-0 bg-brand-primary text-white rounded-2xl flex items-center justify-center shadow-sm">
+                                <Trophy size={24} />
+                              </div>
+                            )}
                             <div>
                               <h4 className="text-lg font-bold text-gray-900">{event.title}</h4>
                               <p className="text-sm font-semibold text-brand-primary mt-0.5 flex items-center gap-1.5">

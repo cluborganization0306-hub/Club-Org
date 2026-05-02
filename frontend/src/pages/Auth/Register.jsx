@@ -25,7 +25,7 @@ const Register = () => {
     
     const res = await register(
       formData.name, 
-      formData.email, 
+      formData.email.trim().toLowerCase(), 
       formData.password, 
       'student', 
       prn, 

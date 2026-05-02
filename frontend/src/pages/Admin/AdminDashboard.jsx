@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
-import { Shield, Plus, Building, UserCheck, Check, X, Image as ImageIcon, Settings, Users, Search } from 'lucide-react';
+import { Shield, Plus, Building, UserCheck, Check, X, Image as ImageIcon, Settings, Users, Search, Trash2, Calendar, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
@@ -26,6 +26,12 @@ const AdminDashboard = () => {
   const [budgetAmount, setBudgetAmount] = useState('');
   const [editClubName, setEditClubName] = useState('');
   const [editDescription, setEditDescription] = useState('');
+
+  // Events Modal State
+  const [eventsModalOpen, setEventsModalOpen] = useState(false);
+  const [eventsClub, setEventsClub] = useState(null);
+  const [clubEvents, setClubEvents] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
   const [editLogoUrl, setEditLogoUrl] = useState('');
 
   useEffect(() => {
@@ -182,6 +188,33 @@ const AdminDashboard = () => {
       fetchStudents(); // Refresh to remove the student from the list since role is now club_head
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to assign president');
+    }
+  };
+
+  // Fetch events for a specific club
+  const openClubEvents = async (club) => {
+    setEventsClub(club);
+    setEventsModalOpen(true);
+    setLoadingEvents(true);
+    try {
+      const res = await axios.get((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/events', { headers: getAuthHeaders() });
+      const filtered = res.data.filter(e => e.clubId?._id === club._id || e.clubId === club._id);
+      setClubEvents(filtered);
+    } catch (error) {
+      toast.error('Failed to fetch events');
+    }
+    setLoadingEvents(false);
+  };
+
+  // Delete an event
+  const handleDeleteEvent = async (eventId) => {
+    if (!window.confirm('Are you sure you want to delete this event?')) return;
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/events/${eventId}`, { headers: getAuthHeaders() });
+      setClubEvents(prev => prev.filter(e => e._id !== eventId));
+      toast.success('Event deleted successfully!');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete event');
     }
   };
 
@@ -351,7 +384,7 @@ const AdminDashboard = () => {
                 <p className="p-6 text-gray-500 text-center">No clubs registered in the system.</p>
               ) : (
                 clubs.map(club => (
-                  <motion.div variants={itemVariants} key={club._id} className="p-6 hover:bg-gray-50 flex justify-between items-center transition-colors">
+                  <motion.div variants={itemVariants} key={club._id} className="p-6 hover:bg-indigo-50/50 flex justify-between items-center transition-colors cursor-pointer group" onClick={() => openClubEvents(club)}>
                     <div className="flex gap-4">
                       {club.logoUrl ? (
                         <img src={club.logoUrl} alt={`${club.clubName} Logo`} className="w-16 h-16 rounded-xl object-cover border border-gray-200" />
@@ -361,7 +394,7 @@ const AdminDashboard = () => {
                         </div>
                       )}
                       <div>
-                        <h4 className="font-semibold text-gray-900 text-lg">{club.clubName}</h4>
+                        <h4 className="font-semibold text-gray-900 text-lg group-hover:text-indigo-700 transition-colors">{club.clubName}</h4>
                         <p className="text-sm text-gray-600 mt-1 max-w-xl">{club.description}</p>
                         <div className="mt-2 flex items-center gap-2 text-sm">
                           <UserCheck size={16} className="text-gray-400" />
@@ -371,10 +404,16 @@ const AdminDashboard = () => {
                         </div>
                       </div>
                     </div>
-                    <div>
+                    <div className="flex items-center gap-2">
                       <button 
-                        onClick={() => openSettingsModal(club)}
-                        className="px-4 py-2 bg-white border border-gray-200 shadow-sm text-gray-700 hover:bg-gray-50 font-medium rounded-lg text-sm transition-colors flex items-center gap-2"
+                        onClick={(e) => { e.stopPropagation(); openClubEvents(club); }}
+                        className="px-3 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium rounded-lg text-sm transition-colors flex items-center gap-2 border border-indigo-200"
+                      >
+                        <Calendar size={16} /> Events
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); openSettingsModal(club); }}
+                        className="px-3 py-2 bg-white border border-gray-200 shadow-sm text-gray-700 hover:bg-gray-50 font-medium rounded-lg text-sm transition-colors flex items-center gap-2"
                       >
                         <Settings size={16} /> Settings
                       </button>
@@ -608,6 +647,92 @@ const AdminDashboard = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </motion.div>
+        </div>
+      )}
+      </AnimatePresence>
+
+      {/* Club Events Modal */}
+      <AnimatePresence>
+      {eventsModalOpen && eventsClub && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div 
+            variants={modalVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
+          >
+            <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Calendar size={20} /> Events: {eventsClub.clubName}
+                </h3>
+                <p className="text-white/70 text-sm mt-0.5">{clubEvents.length} events found</p>
+              </div>
+              <button onClick={() => setEventsModalOpen(false)} className="text-white/80 hover:text-white text-2xl">&times;</button>
+            </div>
+            
+            <div className="max-h-[60vh] overflow-y-auto">
+              {loadingEvents ? (
+                <div className="p-12 text-center">
+                  <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                  <p className="text-gray-400">Loading events...</p>
+                </div>
+              ) : clubEvents.length === 0 ? (
+                <div className="p-12 text-center">
+                  <Calendar size={40} className="mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-400 font-medium">No events for this club</p>
+                  <p className="text-gray-300 text-sm mt-1">Events created by the club head will appear here</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {clubEvents.map(event => (
+                    <div key={event._id} className="p-5 hover:bg-gray-50 transition-colors group">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 flex gap-4">
+                          {event.imageUrl ? (
+                            <img src={event.imageUrl} alt={event.title} className="w-16 h-16 rounded-lg object-cover border border-gray-200 flex-shrink-0" />
+                          ) : (
+                            <div className="w-16 h-16 rounded-lg bg-indigo-100 text-indigo-500 flex items-center justify-center font-bold text-xl border border-indigo-200 flex-shrink-0">
+                              <Calendar size={24} />
+                            </div>
+                          )}
+                          <div>
+                            <h4 className="font-bold text-gray-900 text-base">{event.title}</h4>
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">{event.description}</p>
+                            <div className="flex items-center gap-4 mt-2">
+                              <span className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
+                                <Clock size={12} /> {new Date(event.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {event.participants?.length || 0} participants
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteEvent(event._id)}
+                          className="p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 flex-shrink-0 ml-4"
+                          title="Delete event"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 flex justify-end">
+              <button 
+                onClick={() => setEventsModalOpen(false)}
+                className="px-5 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg font-medium text-sm transition-colors"
+              >
+                Close
+              </button>
             </div>
           </motion.div>
         </div>

@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
-import { CalendarPlus, Users, DollarSign, BarChart3, PlusCircle, Building, CheckCircle, Check, X, Eye, QrCode, Megaphone, MessageSquare } from 'lucide-react';
+import { CalendarPlus, Users, DollarSign, BarChart3, PlusCircle, Building, CheckCircle, Check, X, Eye, QrCode, Megaphone, MessageSquare, Trash2, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
@@ -16,6 +16,7 @@ const ClubHeadDashboard = () => {
   const [members, setMembers] = useState([]);
   
   const [newEvent, setNewEvent] = useState({ title: '', description: '', date: '', clubId: '' });
+  const [eventImageFile, setEventImageFile] = useState(null);
   const [newExpense, setNewExpense] = useState({ description: '', cost: '' });
   
   const [announcements, setAnnouncements] = useState([]);
@@ -84,10 +85,28 @@ const ClubHeadDashboard = () => {
   const handleCreateEvent = async (e) => {
     e.preventDefault();
     try {
-      await axios.post((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/events', newEvent, { headers: getAuthHeaders() });
+      let imageUrl = '';
+      if (eventImageFile) {
+        const formData = new FormData();
+        formData.append('image', eventImageFile);
+        
+        const uploadRes = await axios.post((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/upload', formData, {
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        imageUrl = uploadRes.data.imageUrl;
+      }
+
+      await axios.post((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/events', { ...newEvent, imageUrl }, { headers: getAuthHeaders() });
       toast.success("Event created successfully!");
       fetchData();
-      setNewEvent({ ...newEvent, title: '', description: '', date: '' });
+      setNewEvent({ title: '', description: '', date: '', clubId: newEvent.clubId });
+      setEventImageFile(null);
+      if (document.getElementById('eventImageInput')) {
+        document.getElementById('eventImageInput').value = "";
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to create event");
     }
@@ -175,6 +194,29 @@ const ClubHeadDashboard = () => {
     }
   };
 
+  const handleDeleteAnnouncement = async (annId) => {
+    if (!window.confirm("Are you sure you want to delete this announcement?")) return;
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/announcements/delete/${annId}`, { headers: getAuthHeaders() });
+      toast.success("Announcement deleted!");
+      const myClubs = clubs.filter(c => c.clubHeadId && c.clubHeadId._id === user._id);
+      if (myClubs.length > 0) fetchAnnouncements(myClubs[0]._id);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to delete announcement");
+    }
+  };
+
+  const handleDeleteEvent = async (eventId) => {
+    if (!window.confirm('Are you sure you want to delete this event?')) return;
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/events/${eventId}`, { headers: getAuthHeaders() });
+      toast.success('Event deleted!');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete event');
+    }
+  };
+
   const myClubs = clubs.filter(c => c.clubHeadId && c.clubHeadId._id === user._id);
   const availableClubs = clubs.filter(c => !c.clubHeadId);
 
@@ -233,7 +275,6 @@ const ClubHeadDashboard = () => {
           { id: 'members', label: 'Members & Applications', icon: Users, color: 'text-pink-600', border: 'border-pink-600' },
           { id: 'budget', label: 'Budget Tracker', icon: DollarSign, color: 'text-green-600', border: 'border-green-600' },
           { id: 'announcements', label: 'Announcements', icon: Megaphone, color: 'text-blue-600', border: 'border-blue-600' },
-          { id: 'chat', label: 'Club Chat', icon: MessageSquare, color: 'text-teal-600', border: 'border-teal-600' },
           { id: 'performance', label: 'Performance Analysis', icon: BarChart3, color: 'text-purple-600', border: 'border-purple-600' },
           { id: 'request', label: 'Request Club', icon: Building, color: 'text-amber-600', border: 'border-amber-500' }
         ].map(tab => (
@@ -283,6 +324,19 @@ const ClubHeadDashboard = () => {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Event Photo (Optional)</label>
+                  <div className="mt-1 flex items-center">
+                    <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <ImageIcon className="w-6 h-6 text-gray-400 mb-1" />
+                        <p className="text-sm text-gray-500 font-medium">Click to upload photo</p>
+                      </div>
+                      <input id="eventImageInput" type="file" accept="image/*" className="hidden" onChange={e => setEventImageFile(e.target.files[0])} />
+                    </label>
+                  </div>
+                  {eventImageFile && <p className="text-xs text-green-600 mt-2 font-medium">Selected: {eventImageFile.name}</p>}
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
                   <input 
                     type="datetime-local" required
@@ -316,22 +370,39 @@ const ClubHeadDashboard = () => {
                 <p className="p-6 text-gray-500 text-center">No events found for your club.</p>
               ) : (
                 myEvents.map(event => (
-                  <div key={event._id} className="p-6 hover:bg-gray-50 flex justify-between items-center">
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{event.title}</h4>
-                      <p className="text-sm text-gray-500 mt-1">{new Date(event.date).toLocaleString()}</p>
-                      <p className="text-sm text-gray-600 mt-2">{event.description}</p>
+                  <div key={event._id} className="p-6 hover:bg-gray-50 flex justify-between items-center group">
+                    <div className="flex gap-4">
+                      {event.imageUrl ? (
+                        <img src={event.imageUrl} alt={event.title} className="w-16 h-16 rounded-lg object-cover border border-gray-200" />
+                      ) : (
+                        <div className="w-16 h-16 rounded-lg bg-indigo-100 text-indigo-500 flex items-center justify-center font-bold text-xl border border-indigo-200">
+                          {event.title.substring(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{event.title}</h4>
+                        <p className="text-sm text-gray-500 mt-1">{new Date(event.date).toLocaleString()}</p>
+                        <p className="text-sm text-gray-600 mt-2">{event.description}</p>
+                      </div>
                     </div>
                     <div className="text-right flex flex-col items-end gap-2">
                       <span className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium border border-indigo-100">
                         <Users size={14} /> {event.participants.length} Joined
                       </span>
-                      <button 
-                        onClick={() => { setSelectedEvent(event); setParticipantsModalOpen(true); }}
-                        className="text-xs flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-medium"
-                      >
-                        <Eye size={14} /> View Participants
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => { setSelectedEvent(event); setParticipantsModalOpen(true); }}
+                          className="text-xs flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-medium"
+                        >
+                          <Eye size={14} /> View Participants
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteEvent(event._id)}
+                          className="text-xs flex items-center gap-1 text-red-400 hover:text-red-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={14} /> Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -638,25 +709,24 @@ const ClubHeadDashboard = () => {
                 <p className="p-6 text-gray-500 text-center">No announcements posted yet.</p>
               ) : (
                 announcements.map(ann => (
-                  <div key={ann._id} className="p-6 hover:bg-gray-50">
-                    <p className="text-gray-800 whitespace-pre-wrap">{ann.content}</p>
-                    <p className="text-xs text-gray-400 mt-2 font-medium">Posted by {ann.createdBy?.name} • {new Date(ann.createdAt).toLocaleString()}</p>
+                  <div key={ann._id} className="p-6 hover:bg-gray-50 flex justify-between items-start group">
+                    <div>
+                      <p className="text-gray-800 whitespace-pre-wrap">{ann.content}</p>
+                      <p className="text-xs text-gray-400 mt-2 font-medium">Posted by {ann.createdBy?.name} • {new Date(ann.createdAt).toLocaleString()}</p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteAnnouncement(ann._id)}
+                      className="p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 flex-shrink-0"
+                      title="Delete announcement"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 ))
               )}
             </div>
           </div>
         </div>
-      )}
-
-      {activeTab === 'chat' && (
-        myClubs.length > 0 ? (
-          <div className="max-w-4xl mx-auto">
-            <ChatBox clubId={myClubs[0]._id} />
-          </div>
-        ) : (
-          <div className="p-8 text-center text-gray-500 bg-white rounded-xl shadow-sm">You need to lead a club to access the chat.</div>
-        )
       )}
 
       {/* Participants Modal */}
