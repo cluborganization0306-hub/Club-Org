@@ -33,8 +33,9 @@ const StudentDashboard = () => {
   const formatImageUrl = (url) => {
     if (!url) return null;
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    if (url.includes('localhost:5000') && !API_URL.includes('localhost:5000')) {
-      return url.replace('http://localhost:5000', API_URL);
+    if (url.includes('/uploads/')) {
+      const filename = url.split('/uploads/')[1];
+      return `${API_URL}/uploads/${filename}`;
     }
     return url;
   };
