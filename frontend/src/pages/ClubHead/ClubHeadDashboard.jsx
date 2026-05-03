@@ -92,8 +92,7 @@ const ClubHeadDashboard = () => {
         
         const uploadRes = await axios.post((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/upload', formData, {
           headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'multipart/form-data'
+            ...getAuthHeaders()
           }
         });
         imageUrl = uploadRes.data.imageUrl;
@@ -261,11 +260,6 @@ const ClubHeadDashboard = () => {
             Manage your club, events, members, and budget efficiently.
           </p>
         </div>
-        {myClubs.length === 0 && (
-          <div className="mt-4 bg-amber-50 text-amber-800 p-4 rounded-lg border border-amber-200">
-            <strong>Notice:</strong> You have not been assigned to a club yet. Please go to the "Request Club" tab.
-          </div>
-        )}
       </header>
 
       {/* Tabs */}
@@ -275,8 +269,7 @@ const ClubHeadDashboard = () => {
           { id: 'members', label: 'Members & Applications', icon: Users, color: 'text-pink-600', border: 'border-pink-600' },
           { id: 'budget', label: 'Budget Tracker', icon: DollarSign, color: 'text-green-600', border: 'border-green-600' },
           { id: 'announcements', label: 'Announcements', icon: Megaphone, color: 'text-blue-600', border: 'border-blue-600' },
-          { id: 'performance', label: 'Performance Analysis', icon: BarChart3, color: 'text-purple-600', border: 'border-purple-600' },
-          { id: 'request', label: 'Request Club', icon: Building, color: 'text-amber-600', border: 'border-amber-500' }
+          { id: 'performance', label: 'Performance Analysis', icon: BarChart3, color: 'text-purple-600', border: 'border-purple-600' }
         ].map(tab => (
           <button 
             key={tab.id}
@@ -623,56 +616,7 @@ const ClubHeadDashboard = () => {
         </div>
       )}
 
-      {activeTab === 'request' && (
-        <div className="mockup-card overflow-hidden">
-          <div className="px-6 py-5 border-b border-gray-100 bg-gray-50">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <Building size={20} className="text-gray-500" /> Request to Lead a Club
-            </h3>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {availableClubs.length === 0 ? (
-              <p className="p-6 text-gray-500 text-center">No available clubs found without a head.</p>
-            ) : (
-              availableClubs.map(club => {
-                const isPending = club.pendingRequests?.some(reqUser => reqUser._id === user._id);
-                
-                return (
-                  <div key={club._id} className="p-6 flex justify-between items-center hover:bg-gray-50 transition-colors">
-                    <div className="flex gap-4">
-                      {club.logoUrl ? (
-                        <img src={club.logoUrl} alt={`${club.clubName} Logo`} className="w-16 h-16 rounded-xl object-cover border border-gray-200" />
-                      ) : (
-                        <div className="w-16 h-16 rounded-xl bg-indigo-100 text-indigo-500 flex items-center justify-center font-bold text-xl border border-indigo-200">
-                          {club.clubName.substring(0, 2).toUpperCase()}
-                        </div>
-                      )}
-                      <div>
-                        <h4 className="font-semibold text-gray-900 text-lg">{club.clubName}</h4>
-                        <p className="text-sm text-gray-600 mt-1 max-w-xl">{club.description}</p>
-                      </div>
-                    </div>
-                    <div>
-                      {isPending ? (
-                        <span className="px-4 py-2 bg-amber-50 text-amber-700 font-medium rounded-lg text-sm flex items-center gap-2 border border-amber-200">
-                          <CheckCircle size={16} /> Request Pending
-                        </span>
-                      ) : (
-                        <button 
-                          onClick={() => handleRequestLead(club._id)}
-                          className="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 font-medium rounded-lg text-sm transition-colors shadow-sm"
-                        >
-                          Request to Lead
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      )}
+
 
       {activeTab === 'announcements' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

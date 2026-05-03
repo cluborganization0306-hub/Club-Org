@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
-import { Compass, Calendar as CalendarIcon, UserCheck, ChevronRight, Trophy, Star, List, CalendarDays, Ghost, Megaphone, MessageSquare, ArrowLeft } from 'lucide-react';
+import { Compass, Calendar as CalendarIcon, UserCheck, ChevronRight, Trophy, Star, List, CalendarDays, Ghost, Megaphone, MessageSquare, ArrowLeft, X, BookOpen, MapPin, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
@@ -28,6 +28,7 @@ const StudentDashboard = () => {
   const [myMemberships, setMyMemberships] = useState([]);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar'
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedEventDetail, setSelectedEventDetail] = useState(null);
 
   // My Club Workspace
   const [selectedMyClub, setSelectedMyClub] = useState(null);
@@ -314,7 +315,13 @@ const StudentDashboard = () => {
                               </p>
                             </div>
                           </div>
-                          <div className="flex-shrink-0">
+                          <div className="flex-shrink-0 flex gap-2">
+                            <button 
+                              onClick={() => setSelectedEventDetail(event)}
+                              className="px-4 py-2.5 bg-white text-[#2e1065] rounded-xl text-sm font-bold border border-[#2e1065]/20 hover:border-[#2e1065] hover:bg-[#2e1065] hover:text-white transition-all shadow-sm"
+                            >
+                              See Details
+                            </button>
                             {isParticipating ? (
                               <span className="px-5 py-2.5 bg-white text-brand-secondary rounded-xl text-sm font-bold border border-brand-secondary/20 shadow-sm flex items-center gap-2">
                                 <UserCheck size={16} /> Joined
@@ -380,10 +387,7 @@ const StudentDashboard = () => {
               </motion.div>
             )}
           </AnimatePresence>
-          <div className="px-6 py-4 border-t border-gray-50 flex items-center justify-between text-brand-primary hover:text-brand-dark transition-colors cursor-pointer bg-gray-50/50">
-             <span className="text-sm font-semibold flex items-center gap-2"><CalendarIcon size={16}/> View full schedule</span>
-             <ChevronRight size={18}/>
-          </div>
+
         </div>
 
         {/* Clubs Section */}
@@ -473,12 +477,101 @@ const StudentDashboard = () => {
               })
             )}
           </motion.div>
-          <div className="px-6 py-4 border-t border-gray-50 flex items-center justify-between text-brand-secondary hover:text-brand-dark transition-colors cursor-pointer bg-gray-50/50">
-             <span className="text-sm font-semibold flex items-center gap-2"><Compass size={16}/> Explore more clubs</span>
-             <ChevronRight size={18}/>
-          </div>
+
         </div>
       </div>
+
+      {/* Event Details Modal */}
+      <AnimatePresence>
+        {selectedEventDetail && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedEventDetail(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-hidden shadow-2xl z-10 flex flex-col"
+            >
+              <button 
+                onClick={() => setSelectedEventDetail(null)}
+                className="absolute top-4 right-4 p-2 bg-black/30 backdrop-blur-sm text-white hover:bg-black/50 rounded-full transition-colors z-20"
+              >
+                <X size={20} />
+              </button>
+              
+              {/* Event Image */}
+              <div className="h-56 bg-gray-100 flex-shrink-0 relative overflow-hidden">
+                {selectedEventDetail.imageUrl ? (
+                  <img src={selectedEventDetail.imageUrl} alt={selectedEventDetail.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2e1065] to-[#4c1d95]">
+                    <BookOpen size={64} className="text-white/30" />
+                  </div>
+                )}
+                <div className="absolute bottom-4 left-6 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold text-[#2e1065] shadow-lg">
+                  <CalendarIcon size={14} className="inline mr-2" />
+                  {new Date(selectedEventDetail.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
+              </div>
+              
+              {/* Event Content */}
+              <div className="p-8 flex flex-col flex-1 overflow-y-auto">
+                <div className="flex items-center gap-2 text-xs font-bold text-brand-secondary uppercase tracking-wider mb-3">
+                  <MapPin size={14} /> Main Campus
+                </div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">{selectedEventDetail.title}</h2>
+                
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <BookOpen size={18} className="text-brand-primary" /> Event Description
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
+                    {selectedEventDetail.description || 'No description available for this event.'}
+                  </p>
+                </div>
+
+                <div className="mt-6 flex gap-4">
+                  <div className="flex-1 p-4 bg-brand-primary/5 rounded-xl border border-brand-primary/10">
+                    <p className="text-xs text-gray-500 font-medium">Participants</p>
+                    <p className="text-lg font-bold text-gray-900 flex items-center gap-2 mt-1">
+                      <UserCheck size={18} className="text-brand-primary" /> {selectedEventDetail.participants?.length || 0}
+                    </p>
+                  </div>
+                  {selectedEventDetail.clubId && (
+                    <div className="flex-1 p-4 bg-brand-secondary/5 rounded-xl border border-brand-secondary/10">
+                      <p className="text-xs text-gray-500 font-medium">Organized by</p>
+                      <p className="text-lg font-bold text-gray-900 mt-1">{selectedEventDetail.clubId.clubName || 'Student Club'}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="px-8 py-6 border-t border-gray-100 flex justify-end gap-3 shrink-0">
+                <button 
+                  onClick={() => setSelectedEventDetail(null)}
+                  className="px-6 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Close
+                </button>
+                {!selectedEventDetail.participants?.includes(user?._id) && (
+                  <button 
+                    onClick={() => { handleJoinEvent(selectedEventDetail._id); setSelectedEventDetail(null); }}
+                    className="px-6 py-3 bg-gradient-to-r from-[#2e1065] to-[#4c1d95] text-white font-bold rounded-xl hover:shadow-lg hover:shadow-[#2e1065]/30 transition-all flex items-center gap-2"
+                  >
+                    Participate <ArrowRight size={18} />
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

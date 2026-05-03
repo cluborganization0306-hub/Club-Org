@@ -72,6 +72,17 @@ const SlidingChatPanel = ({ clubId, clubName, userRole, onClose }) => {
     }
   };
 
+  const handleClearChat = async () => {
+    if (!window.confirm('Are you sure you want to clear all chat history for this club? This action cannot be undone.')) return;
+    try {
+      await axios.delete(`${API}/api/chat/${clubId}/clear`, { headers: getAuthHeaders() });
+      setMessages([]);
+      toast.success('Chat history cleared');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to clear chat');
+    }
+  };
+
   // Check if user can delete a message
   const canDelete = (msg) => {
     if (user.role === 'admin') return true;
@@ -122,12 +133,23 @@ const SlidingChatPanel = ({ clubId, clubName, userRole, onClose }) => {
               </span>
             </div>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all"
-          >
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            {(userRole === 'Club Head' || userRole === 'Admin' || user?.role === 'admin') && (
+              <button 
+                onClick={handleClearChat}
+                className="p-2 text-red-300 hover:text-red-100 hover:bg-red-500/20 rounded-xl transition-all flex items-center gap-1 text-xs font-medium"
+                title="Clear all chats"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+            <button 
+              onClick={onClose}
+              className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Online indicator */}

@@ -114,4 +114,30 @@ const deleteChatMessage = async (req, res) => {
   }
 };
 
-module.exports = { getChatHistory, getUserChatSummary, deleteChatMessage };
+// Clear all chat history for a club
+const clearChatHistory = async (req, res) => {
+  const { clubId } = req.params;
+  try {
+    // Check authorization: Admin or Club Head
+    let authorized = false;
+    if (req.user.role === 'admin') {
+      authorized = true;
+    } else {
+      const club = await Club.findById(clubId);
+      if (club && club.clubHeadId && club.clubHeadId.equals(req.user._id)) {
+        authorized = true;
+      }
+    }
+
+    if (!authorized) {
+      return res.status(403).json({ message: 'Not authorized to clear chat for this club' });
+    }
+
+    await ChatMessage.deleteMany({ clubId });
+    res.json({ message: 'Chat history cleared successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getChatHistory, getUserChatSummary, deleteChatMessage, clearChatHistory };

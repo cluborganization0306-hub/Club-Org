@@ -71,6 +71,17 @@ const ChatBox = ({ clubId }) => {
     }
   };
 
+  const handleClearChat = async () => {
+    if (!window.confirm('Are you sure you want to clear all chat history for this club? This action cannot be undone.')) return;
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/chat/${clubId}/clear`, { headers: getAuthHeaders() });
+      setMessages([]);
+      toast.success('Chat history cleared');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to clear chat');
+    }
+  };
+
   // Determine if user can delete this message
   // Club Heads & Admins can delete anything, sender can delete own
   const canDelete = (msg) => {
@@ -88,7 +99,17 @@ const ChatBox = ({ clubId }) => {
     <div className="flex flex-col h-[500px] bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="bg-indigo-50 p-4 border-b border-indigo-100 font-semibold text-indigo-900 flex justify-between items-center">
         <span>Club Chat</span>
-        <span className="text-xs text-indigo-500 bg-white px-2 py-1 rounded-full border border-indigo-200">Real-time</span>
+        <div className="flex items-center gap-2">
+          {(user?.role === 'admin' || user?.role === 'club_head') && (
+            <button 
+              onClick={handleClearChat}
+              className="text-xs text-red-600 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-md border border-red-200 transition-colors flex items-center gap-1"
+            >
+              <Trash2 size={12} /> Clear All
+            </button>
+          )}
+          <span className="text-xs text-indigo-500 bg-white px-2 py-1 rounded-full border border-indigo-200">Real-time</span>
+        </div>
       </div>
       
       <div className="flex-1 p-4 overflow-y-auto bg-gray-50/50 space-y-4">

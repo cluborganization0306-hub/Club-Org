@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Search, MapPin, Calendar, Users, Award, Shield, ArrowRight, BookOpen, Clock, Heart } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, MapPin, Calendar, Users, Award, Shield, ArrowRight, BookOpen, Clock, Heart, X } from 'lucide-react';
 import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
 
@@ -10,6 +10,8 @@ const LandingPage = () => {
   const [clubs, setClubs] = useState([]);
   const [events, setEvents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedClub, setSelectedClub] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const { login, register } = React.useContext(AuthContext);
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
   
@@ -82,10 +84,10 @@ const LandingPage = () => {
       </div>
 
       {/* Hero Section */}
-      <section className="relative min-h-[85vh] flex flex-col justify-center bg-gray-900">
+      <section className="relative min-h-[90vh] flex flex-col justify-center bg-gray-900">
         {/* Main Photo Background - Full cover, no crop */}
         <div className="absolute inset-0 z-0">
-          <img src="/images/dkte-photo-rotated.jpg" alt="DKTE Campus" className="w-full h-full object-cover object-center" />
+          <img src="/images/dkte-campus-night.jpg" alt="DKTE Campus" className="w-full h-full object-cover object-center" />
           {/* Overlay to ensure text readability since it's centered now */}
           <div className="absolute inset-0 bg-black/40"></div>
         </div>
@@ -164,13 +166,13 @@ const LandingPage = () => {
               </div>
             ) : (
               events.map((event, index) => (
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1, duration: 0.4 }}
-                  key={event._id} 
-                  className="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-gray-100/50 overflow-hidden hover:-translate-y-2 transition-transform duration-300 flex flex-col"
-                >
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1, duration: 0.4 }}
+                    key={event._id} 
+                    className="bg-blue-50 rounded-[2.5rem] border border-blue-100 shadow-xl shadow-blue-900/5 overflow-hidden hover:-translate-y-4 hover:shadow-[0_30px_60px_rgba(29,78,216,0.3)] hover:border-blue-300 transition-all duration-500 flex flex-col group"
+                  >
                   <div className="h-48 bg-gray-100 flex items-center justify-center p-0 relative flex-shrink-0 overflow-hidden">
                     <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-4 py-1.5 rounded-full text-xs font-bold text-[#2e1065] shadow-md z-10">
                       {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -186,13 +188,21 @@ const LandingPage = () => {
                       <MapPin size={14} /> Main Campus
                     </div>
                     <h3 className="text-2xl font-bold text-gray-900 mb-2 line-clamp-1">{event.title}</h3>
-                    <p className="text-gray-600 text-sm mb-6 line-clamp-2 flex-1">{event.description}</p>
-                    <button 
-                      onClick={handleActionClick}
-                      className="w-full py-3 bg-gray-50 text-brand-dark font-bold rounded-xl border border-gray-200 hover:border-brand-primary hover:bg-brand-primary hover:text-white transition-all flex items-center justify-center gap-2 mt-auto"
-                    >
-                      Participate <ArrowRight size={18} />
-                    </button>
+                    <p className="text-gray-600 text-sm mb-3 line-clamp-2 flex-1">{event.description}</p>
+                    <div className="flex gap-3 mt-auto">
+                      <button 
+                        onClick={() => setSelectedEvent(event)}
+                        className="flex-1 py-3 bg-white text-[#2e1065] font-bold rounded-xl border-2 border-[#2e1065] hover:bg-[#2e1065] hover:text-white transition-all flex items-center justify-center gap-2"
+                      >
+                        See Details
+                      </button>
+                      <button 
+                        onClick={handleActionClick}
+                        className="flex-1 py-3 bg-gray-50 text-brand-dark font-bold rounded-xl border border-gray-200 hover:border-brand-primary hover:bg-brand-primary hover:text-white transition-all flex items-center justify-center gap-2"
+                      >
+                        Participate <ArrowRight size={18} />
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               ))
@@ -231,9 +241,17 @@ const LandingPage = () => {
                     )}
                   </div>
                   <h3 className="text-xl font-bold mb-2 text-white">{club.clubName}</h3>
-                  <p className="text-gray-400 text-sm line-clamp-2 mb-4">{club.description || 'No description available'}</p>
-                  <div className="flex items-center text-xs font-bold text-brand-primary group-hover:text-white transition-colors mt-auto">
-                    Join Club <ArrowRight size={14} className="ml-1" />
+                  <p className="text-gray-400 text-sm line-clamp-2 mb-3">{club.description || 'No description available'}</p>
+                  <div className="flex items-center justify-between mt-auto">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setSelectedClub(club); }}
+                      className="text-xs font-medium text-[#facc15] hover:text-white transition-colors inline-flex items-center gap-1 border border-[#facc15]/30 bg-[#facc15]/10 px-3 py-1.5 rounded-lg hover:bg-[#facc15]/30"
+                    >
+                      See Details <ArrowRight size={12} />
+                    </button>
+                    <div className="flex items-center text-xs font-bold text-brand-primary group-hover:text-white transition-colors">
+                      Join Club <ArrowRight size={14} className="ml-1" />
+                    </div>
                   </div>
                 </div>
               ))
@@ -298,6 +316,147 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+
+      {/* Event Details Modal */}
+      <AnimatePresence>
+        {selectedEvent && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedEvent(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-hidden shadow-2xl z-10 flex flex-col"
+            >
+              <button 
+                onClick={() => setSelectedEvent(null)}
+                className="absolute top-4 right-4 p-2 bg-black/30 backdrop-blur-sm text-white hover:bg-black/50 rounded-full transition-colors z-20"
+              >
+                <X size={20} />
+              </button>
+              
+              {/* Event Image */}
+              <div className="h-56 bg-gray-100 flex-shrink-0 relative overflow-hidden">
+                {selectedEvent.imageUrl ? (
+                  <img src={selectedEvent.imageUrl} alt={selectedEvent.title} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2e1065] to-[#4c1d95]">
+                    <BookOpen size={64} className="text-white/30" />
+                  </div>
+                )}
+                <div className="absolute bottom-4 left-6 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold text-[#2e1065] shadow-lg">
+                  <Calendar size={14} className="inline mr-2" />
+                  {new Date(selectedEvent.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </div>
+              </div>
+              
+              {/* Event Content */}
+              <div className="p-8 flex flex-col flex-1 overflow-y-auto">
+                <div className="flex items-center gap-2 text-xs font-bold text-brand-secondary uppercase tracking-wider mb-3">
+                  <MapPin size={14} /> Main Campus
+                </div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">{selectedEvent.title}</h2>
+                
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <BookOpen size={18} className="text-brand-primary" /> Event Description
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
+                    {selectedEvent.description || 'No description available for this event.'}
+                  </p>
+                </div>
+
+                {selectedEvent.clubId && (
+                  <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-3">
+                    <Users size={18} className="text-brand-primary" />
+                    <div>
+                      <p className="text-xs text-gray-500 font-medium">Organized by</p>
+                      <p className="text-sm font-bold text-gray-900">{selectedEvent.clubId.clubName || 'Student Club'}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="px-8 py-6 border-t border-gray-100 flex justify-end shrink-0">
+                <button 
+                  onClick={() => { setSelectedEvent(null); handleActionClick(); }}
+                  className="px-6 py-3 bg-gradient-to-r from-[#2e1065] to-[#4c1d95] text-white font-bold rounded-xl hover:shadow-lg hover:shadow-[#2e1065]/30 transition-all flex items-center gap-2"
+                >
+                  Log in to Participate <ArrowRight size={18} />
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Club Details Modal */}
+      <AnimatePresence>
+        {selectedClub && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedClub(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-gray-900 border border-gray-700 rounded-3xl p-8 max-w-2xl w-full max-h-[85vh] overflow-hidden shadow-2xl z-10 flex flex-col"
+            >
+              <button 
+                onClick={() => setSelectedClub(null)}
+                className="absolute top-6 right-6 p-2 bg-gray-800 text-gray-400 hover:text-white rounded-full transition-colors z-20"
+              >
+                <X size={20} />
+              </button>
+              
+              <div className="flex items-center gap-6 mb-8 border-b border-gray-800 pb-6 shrink-0 mt-2">
+                <div className="w-24 h-24 rounded-2xl bg-gray-800 flex items-center justify-center text-3xl font-bold flex-shrink-0 overflow-hidden text-white border border-gray-700 shadow-inner">
+                  {selectedClub.logoUrl && selectedClub.logoUrl.trim() !== '' ? (
+                    <img src={selectedClub.logoUrl} alt={selectedClub.clubName} className="w-full h-full object-cover" />
+                  ) : (
+                    selectedClub.clubName.substring(0, 2).toUpperCase()
+                  )}
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold text-white mb-2">{selectedClub.clubName}</h2>
+                  <div className="flex items-center gap-2 text-brand-primary text-sm font-medium">
+                    <Users size={16} /> Student Club
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto pr-4 space-y-4">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <BookOpen size={18} className="text-brand-primary" /> About Us
+                </h3>
+                <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                  {selectedClub.description || 'No description available for this club.'}
+                </p>
+              </div>
+              
+              <div className="mt-8 pt-6 border-t border-gray-800 flex justify-end shrink-0">
+                <button 
+                  onClick={() => { setSelectedClub(null); handleActionClick(); }}
+                  className="px-6 py-3 bg-brand-primary text-white font-bold rounded-xl hover:bg-brand-secondary transition-colors shadow-lg shadow-brand-primary/20 flex items-center gap-2"
+                >
+                  Log in to Join <ArrowRight size={18} />
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Footer */}
       <footer className="bg-[#2e1065] py-12 text-white">

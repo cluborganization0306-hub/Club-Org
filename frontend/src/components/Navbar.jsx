@@ -150,8 +150,11 @@ const Navbar = () => {
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center gap-6">
               <Link to="/" className="flex-shrink-0 flex items-center gap-4 hover-lift">
-                <img src="/images/dkte-logo.png" alt="DKTE Logo" className="h-10 w-auto bg-white rounded-lg p-1 shadow-md object-contain" />
-                <span className="font-extrabold text-xl text-white tracking-tight hidden sm:block">DKTE Campus Portal</span>
+                <img src="/images/dkte-logo.png" alt="DKTE Logo" className="h-12 w-auto bg-white rounded-xl p-0.5 shadow-md object-contain" />
+                <div className="hidden sm:flex flex-col leading-tight">
+                  <span className="font-extrabold text-base text-white tracking-tight">DKTE Society's Textile & Engineering Institute</span>
+                  <span className="text-xs text-white/60 font-medium tracking-wide">(An Empowered Autonomous Institute)</span>
+                </div>
               </Link>
             </div>
             

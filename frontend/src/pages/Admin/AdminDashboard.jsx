@@ -85,8 +85,7 @@ const AdminDashboard = () => {
         
         const uploadRes = await axios.post((import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/upload', formData, {
           headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'multipart/form-data'
+            ...getAuthHeaders()
           }
         });
         logoUrl = uploadRes.data.imageUrl;
@@ -315,54 +314,6 @@ const AdminDashboard = () => {
         </div>
 
         <div className="lg:col-span-2 space-y-8">
-          {/* Pending Requests Section */}
-          <div className="mockup-card">
-            <div className="px-6 py-5 border-b border-gray-100 bg-amber-50">
-              <h3 className="text-lg font-semibold text-amber-900 flex items-center gap-2">
-                <UserCheck size={20} className="text-amber-600" /> Pending Club Head Requests
-              </h3>
-            </div>
-            <motion.div 
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="divide-y divide-gray-100"
-            >
-              {clubs.filter(c => c.pendingRequests && c.pendingRequests.length > 0).length === 0 ? (
-                <p className="p-6 text-gray-500 text-center">No pending requests at the moment.</p>
-              ) : (
-                clubs.filter(c => c.pendingRequests && c.pendingRequests.length > 0).map(club => (
-                  <motion.div variants={itemVariants} key={`req-${club._id}`} className="p-6">
-                    <h4 className="font-semibold text-gray-900 mb-3">Requests for {club.clubName}</h4>
-                    <div className="space-y-3">
-                      {club.pendingRequests.map(reqUser => (
-                        <div key={reqUser._id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-100">
-                          <div>
-                            <p className="font-medium text-gray-900">{reqUser.name}</p>
-                            <p className="text-sm text-gray-500">{reqUser.email}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => handleApprove(club._id, reqUser._id)}
-                              className="px-3 py-1.5 bg-green-100 text-green-700 hover:bg-green-200 rounded-md text-sm font-medium flex items-center gap-1 transition-colors"
-                            >
-                              <Check size={16} /> Approve
-                            </button>
-                            <button 
-                              onClick={() => handleReject(club._id, reqUser._id)}
-                              className="px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 rounded-md text-sm font-medium flex items-center gap-1 transition-colors"
-                            >
-                              <X size={16} /> Reject
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                ))
-              )}
-            </motion.div>
-          </div>
 
           {/* System Clubs Section */}
           <div className="mockup-card">
