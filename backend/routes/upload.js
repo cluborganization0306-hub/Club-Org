@@ -45,7 +45,7 @@ router.post('/', protect, authorizeRoles('admin', 'club_head'), upload.single('i
   }
   res.json({
     message: 'Image uploaded successfully',
-    imageUrl: `http://localhost:5000/uploads/${req.file.filename}`
+    imageUrl: `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
   });
 });
 

@@ -30,6 +30,15 @@ const StudentDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedEventDetail, setSelectedEventDetail] = useState(null);
 
+  const formatImageUrl = (url) => {
+    if (!url) return null;
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    if (url.includes('localhost:5000') && !API_URL.includes('localhost:5000')) {
+      return url.replace('http://localhost:5000', API_URL);
+    }
+    return url;
+  };
+
   // My Club Workspace
   const [selectedMyClub, setSelectedMyClub] = useState(null);
   const [announcements, setAnnouncements] = useState([]);
@@ -299,7 +308,7 @@ const StudentDashboard = () => {
                         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                           <div className="flex items-center gap-4">
                             {event.imageUrl ? (
-                              <img src={event.imageUrl} alt={event.title} className="w-14 h-14 rounded-2xl object-cover shadow-sm flex-shrink-0 border border-brand-primary/20" />
+                              <img src={formatImageUrl(event.imageUrl)} alt={event.title} className="w-14 h-14 rounded-2xl object-cover shadow-sm flex-shrink-0 border border-brand-primary/20" />
                             ) : (
                               <div className="w-14 h-14 flex-shrink-0 bg-brand-primary text-white rounded-2xl flex items-center justify-center shadow-sm">
                                 <Trophy size={24} />
@@ -508,7 +517,7 @@ const StudentDashboard = () => {
               {/* Event Image */}
               <div className="h-56 bg-gray-100 flex-shrink-0 relative overflow-hidden">
                 {selectedEventDetail.imageUrl ? (
-                  <img src={selectedEventDetail.imageUrl} alt={selectedEventDetail.title} className="w-full h-full object-cover" />
+                  <img src={formatImageUrl(selectedEventDetail.imageUrl)} alt={selectedEventDetail.title} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2e1065] to-[#4c1d95]">
                     <BookOpen size={64} className="text-white/30" />

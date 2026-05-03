@@ -30,6 +30,15 @@ const ClubHeadDashboard = () => {
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedQrEvent, setSelectedQrEvent] = useState(null);
 
+  const formatImageUrl = (url) => {
+    if (!url) return null;
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    if (url.includes('localhost:5000') && !API_URL.includes('localhost:5000')) {
+      return url.replace('http://localhost:5000', API_URL);
+    }
+    return url;
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -366,7 +375,7 @@ const ClubHeadDashboard = () => {
                   <div key={event._id} className="p-6 hover:bg-gray-50 flex justify-between items-center group">
                     <div className="flex gap-4">
                       {event.imageUrl ? (
-                        <img src={event.imageUrl} alt={event.title} className="w-16 h-16 rounded-lg object-cover border border-gray-200" />
+                        <img src={formatImageUrl(event.imageUrl)} alt={event.title} className="w-16 h-16 rounded-lg object-cover border border-gray-200" />
                       ) : (
                         <div className="w-16 h-16 rounded-lg bg-indigo-100 text-indigo-500 flex items-center justify-center font-bold text-xl border border-indigo-200">
                           {event.title.substring(0, 2).toUpperCase()}

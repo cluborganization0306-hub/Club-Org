@@ -14,6 +14,15 @@ const LandingPage = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const { login, register } = React.useContext(AuthContext);
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
+
+  const formatImageUrl = (url) => {
+    if (!url) return null;
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    if (url.includes('localhost:5000') && !API_URL.includes('localhost:5000')) {
+      return url.replace('http://localhost:5000', API_URL);
+    }
+    return url;
+  };
   
   const [authForm, setAuthForm] = useState({
     name: '', email: '', password: '', prn: '', department: '', year: '1'
@@ -178,7 +187,7 @@ const LandingPage = () => {
                       {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </div>
                     {event.imageUrl ? (
-                      <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <img src={formatImageUrl(event.imageUrl)} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     ) : (
                       <BookOpen size={64} className="text-gray-300" />
                     )}
@@ -235,7 +244,7 @@ const LandingPage = () => {
                 >
                   <div className="w-16 h-16 rounded-2xl bg-gray-700 flex items-center justify-center text-2xl font-bold mb-4 group-hover:bg-brand-primary transition-colors text-white">
                     {club.logoUrl && club.logoUrl.trim() !== '' ? (
-                      <img src={club.logoUrl} alt={club.clubName} className="w-full h-full object-cover rounded-2xl" />
+                      <img src={formatImageUrl(club.logoUrl)} alt={club.clubName} className="w-full h-full object-cover rounded-2xl" />
                     ) : (
                       club.clubName.substring(0, 2).toUpperCase()
                     )}
@@ -344,7 +353,7 @@ const LandingPage = () => {
               {/* Event Image */}
               <div className="h-56 bg-gray-100 flex-shrink-0 relative overflow-hidden">
                 {selectedEvent.imageUrl ? (
-                  <img src={selectedEvent.imageUrl} alt={selectedEvent.title} className="w-full h-full object-cover" />
+                  <img src={formatImageUrl(selectedEvent.imageUrl)} alt={selectedEvent.title} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2e1065] to-[#4c1d95]">
                     <BookOpen size={64} className="text-white/30" />
