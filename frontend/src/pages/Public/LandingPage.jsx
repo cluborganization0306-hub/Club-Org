@@ -97,7 +97,7 @@ const LandingPage = () => {
       <section className="relative min-h-[90vh] flex flex-col justify-center bg-gray-900">
         {/* Main Photo Background - Full cover, no crop */}
         <div className="absolute inset-0 z-0">
-          <img src="/images/dkte-campus-night.jpg" alt="DKTE Campus" className="w-full h-full object-cover object-center" />
+          <img src="/images/dkte-campus-day.jpg" alt="DKTE Campus" className="w-full h-full object-cover object-center" />
           {/* Overlay to ensure text readability since it's centered now */}
           <div className="absolute inset-0 bg-black/40"></div>
         </div>
