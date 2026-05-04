@@ -17,6 +17,12 @@ const getClubs = async (req, res) => {
 const createClub = async (req, res) => {
   const { clubName, description, clubHeadId, logoUrl } = req.body;
   try {
+    if (clubHeadId) {
+      const existingClub = await Club.findOne({ clubHeadId });
+      if (existingClub) {
+        return res.status(400).json({ message: 'User is already head of another club' });
+      }
+    }
     const newClub = await Club.create({ clubName, description, clubHeadId, logoUrl });
     res.status(201).json(newClub);
   } catch (error) {
@@ -30,6 +36,12 @@ const assignClubHead = async (req, res) => {
   const { clubHeadId } = req.body;
   
   try {
+    if (clubHeadId) {
+      const existingClub = await Club.findOne({ clubHeadId });
+      if (existingClub && existingClub._id.toString() !== id) {
+        return res.status(400).json({ message: 'User is already head of another club' });
+      }
+    }
     const club = await Club.findById(id);
     if (!club) return res.status(404).json({ message: 'Club not found' });
     
@@ -55,6 +67,11 @@ const assignClubHead = async (req, res) => {
 const requestHead = async (req, res) => {
   const { id } = req.params;
   try {
+    const existingClub = await Club.findOne({ clubHeadId: req.user._id });
+    if (existingClub) {
+      return res.status(400).json({ message: 'You are already head of another club' });
+    }
+
     const club = await Club.findById(id);
     if (!club) return res.status(404).json({ message: 'Club not found' });
     
@@ -76,6 +93,13 @@ const approveRequest = async (req, res) => {
   const { id } = req.params;
   const { userId } = req.body;
   try {
+    if (userId) {
+      const existingClub = await Club.findOne({ clubHeadId: userId });
+      if (existingClub && existingClub._id.toString() !== id) {
+        return res.status(400).json({ message: 'User is already head of another club' });
+      }
+    }
+
     const club = await Club.findById(id);
     if (!club) return res.status(404).json({ message: 'Club not found' });
     
@@ -119,6 +143,13 @@ const updateClub = async (req, res) => {
   const { id } = req.params;
   const { clubName, description, clubHeadId, logoUrl } = req.body;
   try {
+    if (clubHeadId) {
+      const existingClub = await Club.findOne({ clubHeadId });
+      if (existingClub && existingClub._id.toString() !== id) {
+        return res.status(400).json({ message: 'User is already head of another club' });
+      }
+    }
+
     const club = await Club.findById(id);
     if (!club) return res.status(404).json({ message: 'Club not found' });
 

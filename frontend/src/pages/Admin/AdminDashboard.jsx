@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../../context/AuthContext';
-import { Shield, Plus, Building, UserCheck, Check, X, Image as ImageIcon, Settings, Users, Search, Trash2, Calendar, Clock } from 'lucide-react';
+import { Shield, Plus, Building, UserCheck, Check, X, Image as ImageIcon, Settings, Users, Search, Trash2, Calendar, Clock, Megaphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
@@ -33,6 +33,13 @@ const AdminDashboard = () => {
   const [clubEvents, setClubEvents] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [editLogoUrl, setEditLogoUrl] = useState('');
+
+  // Announcements Modal State
+  const [announcementsModalOpen, setAnnouncementsModalOpen] = useState(false);
+  const [announcementsClub, setAnnouncementsClub] = useState(null);
+  const [clubAnnouncements, setClubAnnouncements] = useState([]);
+  const [newAnnouncement, setNewAnnouncement] = useState('');
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(false);
 
   useEffect(() => {
     fetchClubs();
@@ -217,6 +224,49 @@ const AdminDashboard = () => {
     }
   };
 
+  // Fetch announcements for a specific club
+  const openClubAnnouncements = async (club) => {
+    setAnnouncementsClub(club);
+    setAnnouncementsModalOpen(true);
+    setLoadingAnnouncements(true);
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/announcements/${club._id}`, { headers: getAuthHeaders() });
+      setClubAnnouncements(res.data);
+    } catch (error) {
+      toast.error('Failed to fetch announcements');
+    }
+    setLoadingAnnouncements(false);
+  };
+
+  // Post a new announcement
+  const handlePostAnnouncement = async (e) => {
+    e.preventDefault();
+    if (!newAnnouncement.trim()) return;
+    try {
+      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/announcements`, {
+        clubId: announcementsClub._id,
+        content: newAnnouncement
+      }, { headers: getAuthHeaders() });
+      toast.success("Announcement posted!");
+      setNewAnnouncement('');
+      openClubAnnouncements(announcementsClub); // refresh
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to post announcement");
+    }
+  };
+
+  // Delete an announcement
+  const handleDeleteAnnouncement = async (annId) => {
+    if (!window.confirm("Are you sure you want to delete this announcement?")) return;
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/announcements/delete/${annId}`, { headers: getAuthHeaders() });
+      setClubAnnouncements(prev => prev.filter(a => a._id !== annId));
+      toast.success("Announcement deleted!");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to delete announcement");
+    }
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -356,6 +406,12 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); openClubAnnouncements(club); }}
+                        className="px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium rounded-lg text-sm transition-colors flex items-center gap-2 border border-blue-200"
+                      >
+                        <Megaphone size={16} /> Announcements
+                      </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); openClubEvents(club); }}
                         className="px-3 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium rounded-lg text-sm transition-colors flex items-center gap-2 border border-indigo-200"
@@ -680,6 +736,96 @@ const AdminDashboard = () => {
             <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 flex justify-end">
               <button 
                 onClick={() => setEventsModalOpen(false)}
+                className="px-5 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg font-medium text-sm transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+      </AnimatePresence>
+
+      {/* Club Announcements Modal */}
+      <AnimatePresence>
+      {announcementsModalOpen && announcementsClub && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div 
+            variants={modalVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
+          >
+            <div className="px-6 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Megaphone size={20} /> Announcements: {announcementsClub.clubName}
+                </h3>
+                <p className="text-white/70 text-sm mt-0.5">{clubAnnouncements.length} announcements found</p>
+              </div>
+              <button onClick={() => setAnnouncementsModalOpen(false)} className="text-white/80 hover:text-white text-2xl">&times;</button>
+            </div>
+            
+            <div className="p-6 border-b border-gray-100 bg-gray-50">
+              <form onSubmit={handlePostAnnouncement} className="space-y-4">
+                <textarea 
+                  required rows="3"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  placeholder="Type your announcement here..."
+                  value={newAnnouncement}
+                  onChange={e => setNewAnnouncement(e.target.value)}
+                ></textarea>
+                <div className="flex justify-end">
+                  <button type="submit" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                    <Megaphone size={18} /> Post Announcement
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div className="max-h-[40vh] overflow-y-auto">
+              {loadingAnnouncements ? (
+                <div className="p-12 text-center">
+                  <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                  <p className="text-gray-400">Loading announcements...</p>
+                </div>
+              ) : clubAnnouncements.length === 0 ? (
+                <div className="p-12 text-center">
+                  <Megaphone size={40} className="mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-400 font-medium">No announcements for this club</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {clubAnnouncements.map(ann => (
+                    <div key={ann._id} className="p-5 hover:bg-gray-50 transition-colors group">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-semibold text-gray-900">{ann.createdBy?.name || 'Unknown'}</span>
+                            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                              {new Date(ann.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{ann.content}</p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteAnnouncement(ann._id)}
+                          className="p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 flex-shrink-0 ml-4"
+                          title="Delete announcement"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 flex justify-end">
+              <button 
+                onClick={() => setAnnouncementsModalOpen(false)}
                 className="px-5 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg font-medium text-sm transition-colors"
               >
                 Close
